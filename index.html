@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ACW Offerteplatform – v5 (Supabase‑only)</title>
+  <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root{ --acw-red:#D52B1E; --acw-black:#222222; --radius:14px }
+    *{box-sizing:border-box}
+    body{ margin:0; font-family:'Rajdhani',system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,"Helvetica Neue",Arial,sans-serif; background:#f7f7f8; color:#111 }
+    header{ background:#222222; color:#fff; border-bottom:4px solid var(--acw-red) }
+    .head{ display:flex; gap:12px; align-items:center; padding:12px 16px }
+    .head img{ height:36px }
+    .head h1{ margin:0; font-size:18px }
+    .nav{ margin-left:auto; display:flex; gap:8px; align-items:center }
+    .tab{ background:transparent; color:#fff; border:1px solid #ffffff33; border-radius:10px; padding:6px 10px; cursor:pointer; font-weight:700 }
+    .tab.active{ background:#ffffff1a }
+    .pill{ padding:2px 10px; border-radius:999px; background:#ffffff22; color:#fff; font-size:12px; font-weight:700 }
+    .container{ max-width:1060px; margin:18px auto; padding:0 14px }
+    .card{ background:#fff; border:1px solid #e5e7eb; border-radius:var(--acw-radius,14px); box-shadow:0 2px 12px rgba(0,0,0,.05); padding:18px; margin-bottom:14px }
+    .title{ font-size:18px; font-weight:800; margin:0 0 8px }
+    .muted{ color:#6b7280; font-size:14px }
+    .row{ display:grid; grid-template-columns:1fr 1fr; gap:12px }
+    @media(max-width:760px){ .row{ grid-template-columns:1fr } }
+    label{ display:block; font-weight:700; margin:8px 0 4px }
+    input,select,textarea{ width:100%; padding:10px 12px; border:1px solid #e5e7eb; border-radius:10px; font-size:16px }
+    .btn{ display:inline-flex; align-items:center; gap:8px; padding:10px 14px; border-radius:12px; border:none; cursor:pointer; font-weight:800; background:var(--acw-red); color:#fff; box-shadow:0 2px 10px rgba(213,43,30,.25) }
+    .btn.ghost{ background:transparent; color:#111; border:1px solid #e5e7eb }
+    .btn.small{ font-size:14px; padding:8px 10px }
+    table{ width:100%; border-collapse:collapse }
+    th,td{ text-align:left; padding:10px; border-bottom:1px solid #f0f0f0 }
+    th{ font-size:12px; color:#6b7280; text-transform:uppercase; letter-spacing:.4px }
+    .kpi{ display:grid; grid-template-columns:repeat(4,1fr); gap:12px }
+    .kpi .box{ background:#fff; border:1px solid #e5e7eb; border-radius:12px; padding:14px }
+    .kpi .label{ color:#6b7280; font-size:12px; text-transform:uppercase }
+    .kpi .value{ font-size:24px; font-weight:900 }
+    .center{ display:flex; justify-content:center; align-items:center }
+    .hidden{ display:none }
+    .footer{ font-size:12px; color:#6b7280; text-align:center; padding:16px }
+  </style>
+  <!-- Supabase JS v2 -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+  <header>
+    <div class="head">
+      <img src="https://www.acwbv.nl/wp-content/uploads/2025/08/LOGO-ACW-RGB-SLOGAN-DIAP-OP-ZWART.png" alt="ACW"/>
+      <h1>Offerteplatform</h1>
+      <div class="nav">
+        <button id="tabHome" class="tab">Home</button>
+        <button id="tabDash" class="tab">Dashboard</button>
+        <button id="tabAccount" class="tab">Account</button>
+        <button id="tabUsers" class="tab" style="display:none">Gebruikers</button>
+        <span id="sessionPill" class="pill hidden"></span>
+        <button id="btnLogout" class="tab" style="border-color:#ffdddd;color:#fff">Uitloggen</button>
+      </div>
+    </div>
+  </header>
+
+  <div class="container">
+    <!-- LOGIN -->
+    <section id="viewLogin" class="card hidden">
+      <h2 class="title">Inloggen</h2>
+      <div class="row">
+        <div>
+          <label>E‑mail</label>
+          <input id="loginEmail" type="email" placeholder="jij@acwbv.nl"/>
+        </div>
+        <div>
+          <label>Wachtwoord</label>
+          <input id="loginPassword" type="password" placeholder="••••••••"/>
+        </div>
+      </div>
+      <div style="margin-top:10px; display:flex; gap:8px">
+        <button id="btnLogin" class="btn">Inloggen</button>
+        <button id="btnGoSignup" class="btn ghost">Account aanmaken</button>
+      </div>
+      <div id="loginMsg" class="muted"></div>
+    </section>
+
+    <!-- SIGNUP / ONBOARDING -->
+    <section id="viewSignup" class="card hidden">
+      <h2 class="title">Account aanmaken</h2>
+      <p class="muted">Voor DEV kun je e‑mailbevestiging uitzetten in Supabase Auth. Voor PROD aanzetten.</p>
+      <div class="row">
+        <div>
+          <label>Naam</label>
+          <input id="suName" type="text" placeholder="Jouw naam"/>
+        </div>
+        <div>
+          <label>Functie</label>
+          <input id="suRoleTitle" type="text" placeholder="Bijv. Sales medewerker"/>
+        </div>
+      </div>
+      <div class="row">
+        <div>
+          <label>E‑mail</label>
+          <input id="suEmail" type="email" placeholder="jij@acw.nl"/>
+        </div>
+        <div>
+          <label>Wachtwoord (min. 8)</label>
+          <input id="suPassword" type="password" placeholder="Min. 8 tekens"/>
+        </div>
+      </div>
+      <div style="margin-top:10px">
+        <button id="btnSignup" class="btn">Aanmaken</button>
+        <button id="btnBackLogin" class="btn ghost">Terug</button>
+      </div>
+      <div id="suMsg" class="muted"></div>
+    </section>
+
+    <!-- HOME -->
+    <section id="viewHome" class="card hidden">
+      <h2 class="title">Welkom <span id="welcomeName">gebruiker</span></h2>
+      <p class="muted">Kies een actie om te starten.</p>
+      <div class="row">
+        <div class="card" style="margin:0">
+          <h3 class="title" style="font-size:16px">Snelle acties</h3>
+          <div style="display:flex; gap:8px; flex-wrap:wrap">
+            <button id="btnNewQuote" class="btn">Nieuwe offerte maken</button>
+            <button id="btnEditQuote" class="btn ghost">Bestaande offerte bewerken</button>
+          </div>
+        </div>
+        <div class="card" style="margin:0">
+          <h3 class="title" style="font-size:16px">Laatste activiteit</h3>
+          <div id="recentActivity" class="muted">—</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- DASHBOARD -->
+    <section id="viewDashboard" class="card hidden">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <h2 class="title">Dashboard</h2>
+        <div>
+          <label style="font-size:12px">Periode</label>
+          <select id="dashPeriod">
+            <option value="30">Laatste 30 dagen</option>
+            <option value="90">Laatste 90 dagen</option>
+            <option value="365">Laatste 12 maanden</option>
+            <option value="0">Alles</option>
+          </select>
+        </div>
+      </div>
+      <div id="orgWrap">
+        <h3 class="title" style="font-size:16px;margin-top:10px">Organisatie</h3>
+        <div class="kpi" id="kpiOrg"></div>
+      </div>
+      <h3 class="title" style="font-size:16px;margin-top:16px">Persoonlijk</h3>
+      <div class="kpi" id="kpiMe"></div>
+    </section>
+
+    <!-- QUOTES LIST -->
+    <section id="viewQuoteList" class="card hidden">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <h2 class="title">Offertes</h2>
+        <div>
+          <label style="font-size:12px;margin-right:4px">Toon</label>
+          <select id="filterOwner">
+            <option value="me">Mijn offertes</option>
+            <option value="all">Alle offertes (admin)</option>
+          </select>
+        </div>
+      </div>
+      <table>
+        <thead><tr><th>Nr</th><th>Titel</th><th>Klant</th><th>Status</th><th>Waarde (incl €)</th><th>Eigenaar</th><th></th></tr></thead>
+        <tbody id="quoteRows"></tbody>
+      </table>
+      <div style="margin-top:10px"><button id="btnNewQuoteFromList" class="btn">Nieuwe offerte</button> <button id="btnBackHome1" class="btn ghost small">Terug</button></div>
+    </section>
+
+    <!-- QUOTE EDIT -->
+    <section id="viewQuoteEdit" class="card hidden">
+      <h2 class="title">Offerte <span id="qeNumber"></span></h2>
+      <div class="row">
+        <div>
+          <label>Titel</label>
+          <input id="qeTitle" type="text" placeholder="Bijv. Schoonmaak – Locatie X" />
+        </div>
+        <div>
+          <label>Klant</label>
+          <input id="qeClient" type="text" placeholder="Klantnaam" />
+        </div>
+      </div>
+      <div class="row">
+        <div>
+          <label>Waarde incl. btw (€)</label>
+          <input id="qeValue" type="number" min="0" step="0.01" />
+        </div>
+        <div>
+          <label>Status</label>
+          <select id="qeStatus">
+            <option value="concept">concept</option>
+            <option value="review">review</option>
+            <option value="goedgekeurd">goedgekeurd</option>
+            <option value="verzonden">verzonden</option>
+            <option value="geaccepteerd">geaccepteerd</option>
+            <option value="afgewezen">afgewezen</option>
+          </select>
+        </div>
+      </div>
+      <div style="margin-top:10px" class="row">
+        <div class="muted">MVP-editor. Upload/prijsblad volgt in latere epics.</div>
+        <div style="text-align:right">
+          <button id="btnSaveQuote" class="btn">Opslaan</button>
+          <button id="btnDeleteQuote" class="btn ghost">Verwijderen</button>
+          <button id="btnBackHome2" class="btn ghost">Terug</button>
+        </div>
+      </div>
+      <div id="qeMsg" class="muted"></div>
+    </section>
+
+    <!-- ACCOUNT -->
+    <section id="viewAccount" class="card hidden">
+      <h2 class="title">Mijn account</h2>
+      <div class="row">
+        <div>
+          <label>Naam</label>
+          <input id="accName" type="text" />
+        </div>
+        <div>
+          <label>Functie</label>
+          <input id="accRoleTitle" type="text" />
+        </div>
+      </div>
+      <div class="row">
+        <div>
+          <label>E‑mail (alleen-lezen)</label>
+          <input id="accEmail" type="email" disabled />
+        </div>
+        <div>
+          <label>Rol</label>
+          <input id="accRole" type="text" disabled />
+        </div>
+      </div>
+      <div>
+        <label>Handtekening via URL (PNG/JPG)</label>
+        <input id="accSignatureUrl" type="text" placeholder="https://www.acwbv.nl/wp-content/.../handtekening.png" />
+      </div>
+      <div style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap">
+        <button id="btnSaveProfile" class="btn">Opslaan</button>
+      </div>
+      <div id="accMsg" class="muted"></div>
+    </section>
+
+    <!-- USERS (admin, optioneel via Edge Function) -->
+    <section id="viewUsers" class="card hidden">
+      <h2 class="title">Gebruikersbeheer (admin)</h2>
+      <p class="muted">Supabase‑only: voor bulk import/invite gebruiken we een Edge Function. Configureer <code>VITE_SUPABASE_FUNC_URL</code> en klik hieronder.</p>
+      <textarea id="csvInput" rows="6" placeholder="name;email;roleTitle;role;password"></textarea>
+      <div style="margin-top:8px; display:flex; gap:8px">
+        <button id="btnBulkInvite" class="btn">Bulk importeren (Edge Function)</button>
+        <button id="btnBackUsers" class="btn ghost">Terug</button>
+      </div>
+      <div id="usersMsg" class="muted"></div>
+    </section>
+  </div>
+
+  <div class="footer">© <span id="year"></span> ACW – v5 (Supabase‑only)</div>
+
+  <script>
+    // ====== CONFIG (vul deze met je Supabase project waarden) ======
+    const SUPABASE_URL = 'https://zmjlvzqxmmoptisoyrwt.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inptamx2enF4bW1vcHRpc295cnd0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU1MTM0ODQsImV4cCI6MjA3MTA4OTQ4NH0.OuR7gTkXwtBhD7YZghcpok8aNKe7PDb81r3SqdkL0Jw';
+    const SUPABASE_FUNC_URL = window.ENV_SUPABASE_FUNC_URL || ''; // bv. https://YOUR-PROJECT.functions.supabase.co/bulk-import-users
+
+    // ====== Init Supabase ======
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+      auth: { autoRefreshToken:true, persistSession:true, detectSessionInUrl:true }
+    });
+
+    // ====== Helpers ======
+    const el = id => document.getElementById(id);
+    const show = id => el(id).classList.remove('hidden');
+    const hide = id => el(id).classList.add('hidden');
+    const euro = n => (n||0).toLocaleString('nl-NL',{minimumFractionDigits:2, maximumFractionDigits:2});
+    function setActiveTab(id){ ['tabHome','tabDash','tabAccount','tabUsers'].forEach(t=>el(t).classList.remove('active')); if(id) el(id).classList.add('active'); }
+
+    async function getMe(){ const { data:{user} } = await supabase.auth.getUser(); if(!user) return null; // profile
+      const { data: prof } = await supabase.from('profiles').select('id,name,email,role,role_title,signature_url').eq('id', user.id).maybeSingle();
+      if(!prof){ return { id:user.id, email:user.email, name:user.user_metadata?.name||'', role:'sales', role_title:'', signature_url:'' }; }
+      return { id:prof.id, email:prof.email, name:prof.name, role:prof.role, role_title:prof.role_title, signature_url:prof.signature_url };
+    }
+
+    async function saveProfile({name, roleTitle, signatureUrl}){
+      const { data:{user} } = await supabase.auth.getUser(); if(!user) throw new Error('geen sessie');
+      const payload = { id:user.id, name, email:user.email, role_title: roleTitle, signature_url: signatureUrl };
+      const { error } = await supabase.from('profiles').upsert(payload, { onConflict:'id' }); if(error) throw error;
+      await supabase.from('audit_logs').insert({ action:'user:update', details:{fields:['name','roleTitle','signature_url']}, actor_user_id:user.id });
+    }
+
+    async function listQuotes({scope='me', days=0}){
+      const { data:{user} } = await supabase.auth.getUser(); if(!user) return [];
+      const since = days>0 ? new Date(Date.now()-days*24*60*60*1000).toISOString() : null;
+      let q = supabase.from('quotes').select('id,number,title,client,status,value_incl,owner_id,created_at, owner:owner_id(name)');
+      if(scope==='me') q = q.eq('owner_id', user.id);
+      if(since) q = q.gte('created_at', since);
+      const { data, error } = await q.order('created_at',{ascending:false}); if(error) throw error; 
+      return (data||[]).map(r=>({ ...r, ownerName: r.owner?.name || '' }));
+    }
+
+    async function createQuote(){ const { data:{user} } = await supabase.auth.getUser(); if(!user) throw new Error('geen sessie');
+      const payload = { title:'', client:'', status:'concept', value_incl:0, owner_id:user.id };
+      const { data, error } = await supabase.from('quotes').insert(payload).select('id,number').single(); if(error) throw error;
+      await supabase.from('audit_logs').insert({ action:'quote:create', details:{number:data.number}, actor_user_id:user.id });
+      return data; }
+
+    async function updateQuote(id, fields){ const { data:{user} } = await supabase.auth.getUser(); if(!user) throw new Error('geen sessie');
+      const { error } = await supabase.from('quotes').update({
+        title:fields.title, client:fields.client, status:fields.status, value_incl:fields.valueIncl
+      }).eq('id', id); if(error) throw error; await supabase.from('audit_logs').insert({ action:'quote:update', details:{id}, actor_user_id:user.id }); }
+
+    async function deleteQuote(id){ const { data:{user} } = await supabase.auth.getUser(); if(!user) throw new Error('geen sessie');
+      const { error } = await supabase.from('quotes').delete().eq('id', id); if(error) throw error; await supabase.from('audit_logs').insert({ action:'quote:delete', details:{id}, actor_user_id:user.id }); }
+
+    function computeStats(list){ const counts={concept:0,review:0,goedgekeurd:0,verzonden:0,geaccepteerd:0,afgewezen:0}; let sum=0, sumWon=0; list.forEach(q=>{ counts[q.status]=(counts[q.status]||0)+1; sum += Number(q.value_incl||0); if(q.status==='geaccepteerd') sumWon+=Number(q.value_incl||0); }); const decided=counts.geaccepteerd+counts.afgewezen; const winrate= decided? Math.round((counts.geaccepteerd/decided)*100):0; return {total:list.length, counts, sum, sumWon, winrate}; }
+    function renderKPI(boxId, s){ el(boxId).innerHTML = `
+      <div class="box"><div class="label">Totaal offertes</div><div class="value">${s.total}</div></div>
+      <div class="box"><div class="label">Verzonden</div><div class="value">${s.counts.verzonden}</div></div>
+      <div class="box"><div class="label">Geaccepteerd</div><div class="value">${s.counts.geaccepteerd}</div></div>
+      <div class="box"><div class="label">Winrate</div><div class="value">${s.winrate}%</div></div>
+      <div class="box"><div class="label">Totale waarde</div><div class="value">€ ${euro(s.sum)}</div></div>
+      <div class="box"><div class="label">Gewonnen waarde</div><div class="value">€ ${euro(s.sumWon)}</div></div>
+      <div class="box"><div class="label">Afgewezen</div><div class="value">${s.counts.afgewezen}</div></div>
+      <div class="box"><div class="label">Concept</div><div class="value">${s.counts.concept}</div></div>`; }
+
+    // ====== Routing & UI ======
+    async function route(){
+      el('year').textContent = new Date().getFullYear();
+      const { data:{ session } } = await supabase.auth.getSession();
+      const pill = el('sessionPill');
+      if(!session){ hide('viewHome'); hide('viewDashboard'); hide('viewAccount'); hide('viewUsers'); hide('viewQuoteList'); hide('viewQuoteEdit'); show('viewLogin'); setActiveTab(null); pill.classList.add('hidden'); return; }
+      const me = await getMe();
+      // tabs
+      el('tabUsers').style.display = (me.role==='admin') ? 'inline-block':'none';
+      pill.textContent = `${me.name||me.email} · ${me.role}`; pill.classList.remove('hidden');
+      // default home
+      hide('viewLogin'); show('viewHome'); hide('viewDashboard'); hide('viewAccount'); hide('viewUsers'); hide('viewQuoteList'); hide('viewQuoteEdit'); setActiveTab('tabHome');
+      el('welcomeName').textContent = me.name || me.email;
+      renderRecent();
+    }
+
+    async function renderRecent(){ const me = await getMe(); if(!me) return; const { data, error } = await supabase.from('audit_logs').select('time,action,details').order('id',{ascending:false}).limit(6); if(error){ el('recentActivity').textContent='—'; return; } el('recentActivity').innerHTML = (data||[]).map(l=>{ const t=new Date(l.time).toLocaleString('nl-NL'); return `<div><b>${l.action}</b> · <span class="muted">${t}</span></div>`; }).join(''); }
+
+    async function openDashboard(){ hide('viewHome'); hide('viewAccount'); hide('viewUsers'); hide('viewQuoteList'); hide('viewQuoteEdit'); show('viewDashboard'); setActiveTab('tabDash'); const days=parseInt(el('dashPeriod').value,10); const me = await getMe(); const mine = await listQuotes({scope:'me', days}); renderKPI('kpiMe', computeStats(mine)); if(me.role==='admin'){ const all = await listQuotes({scope:'all', days}); renderKPI('kpiOrg', computeStats(all)); el('orgWrap').style.display='block'; } else { el('orgWrap').style.display='none'; } }
+
+    async function renderQuoteRows(){ const scope=el('filterOwner').value; const list = await listQuotes({scope}); const tbody=el('quoteRows'); tbody.innerHTML = list.map(q=>`<tr><td>${q.number}</td><td>${q.title||''}</td><td>${q.client||''}</td><td>${q.status}</td><td>€ ${euro(q.value_incl||0)}</td><td>${q.ownerName||''}</td><td><button data-edit="${q.id}" class="btn small ghost">Bewerken</button></td></tr>`).join(''); }
+
+    function openQuoteList(){ hide('viewHome'); hide('viewDashboard'); hide('viewAccount'); hide('viewUsers'); hide('viewQuoteEdit'); show('viewQuoteList'); setActiveTab(null); renderQuoteRows(); }
+
+    async function openQuoteEdit(id){ hide('viewHome'); hide('viewDashboard'); hide('viewAccount'); hide('viewUsers'); hide('viewQuoteList'); show('viewQuoteEdit'); setActiveTab(null);
+      let q=null; if(!id){ const created = await createQuote(); id = created.id; q = { id, number: created.number, title:'', client:'', value_incl:0, status:'concept' }; } else { const { data, error } = await supabase.from('quotes').select('*').eq('id', id).single(); if(error) { alert('Niet gevonden'); openQuoteList(); return; } q = data; }
+      el('qeNumber').textContent = '#'+q.number; el('qeTitle').value=q.title||''; el('qeClient').value=q.client||''; el('qeValue').value=q.value_incl||0; el('qeStatus').value=q.status; el('btnDeleteQuote').dataset.id=q.id; el('btnSaveQuote').dataset.id=q.id; }
+
+    async function saveQuoteClick(){ const id=el('btnSaveQuote').dataset.id; await updateQuote(id, { title:el('qeTitle').value.trim(), client:el('qeClient').value.trim(), valueIncl: parseFloat(el('qeValue').value||'0'), status: el('qeStatus').value }); el('qeMsg').textContent='Opgeslagen.'; }
+    async function deleteQuoteClick(){ const id=el('btnDeleteQuote').dataset.id; if(confirm('Offerte verwijderen?')){ await deleteQuote(id); openQuoteList(); } }
+
+    async function openAccount(){ hide('viewHome'); hide('viewDashboard'); hide('viewUsers'); hide('viewQuoteList'); hide('viewQuoteEdit'); show('viewAccount'); setActiveTab('tabAccount'); const me=await getMe(); el('accName').value=me.name||''; el('accRoleTitle').value=me.role_title||''; el('accEmail').value=me.email||''; el('accRole').value=me.role||''; el('accSignatureUrl').value=me.signature_url||''; }
+
+    async function saveProfileClick(){ const name=el('accName').value.trim(); const rt=el('accRoleTitle').value.trim(); const url=el('accSignatureUrl').value.trim(); try{ await saveProfile({name, roleTitle:rt, signatureUrl:url}); el('accMsg').textContent='Profiel opgeslagen.'; }catch(e){ el('accMsg').textContent='Fout: '+(e.message||e); } }
+
+    async function openUsers(){ hide('viewHome'); hide('viewDashboard'); hide('viewAccount'); hide('viewQuoteList'); hide('viewQuoteEdit'); show('viewUsers'); setActiveTab('tabUsers'); }
+
+    async function bulkInvite(){ const csv = el('csvInput').value.trim(); if(!csv){ el('usersMsg').textContent='Plak CSV eerst.'; return; } if(!SUPABASE_FUNC_URL){ el('usersMsg').textContent='Configureer eerst SUPABASE_FUNC_URL.'; return; }
+      try{
+        const { data:{ session } } = await supabase.auth.getSession(); const res = await fetch(SUPABASE_FUNC_URL, { method:'POST', headers:{ 'Content-Type':'application/json', Authorization: 'Bearer '+(session?.access_token||'') }, body: JSON.stringify({ csv }) });
+        const out = await res.json(); el('usersMsg').textContent = res.ok ? `Aangemaakt: ${out.created}, overgeslagen: ${out.skipped}` : ('Fout: '+(out.error||res.statusText));
+      }catch(e){ el('usersMsg').textContent='Fout: '+(e.message||e); }
+    }
+
+    // ====== Events ======
+    document.addEventListener('DOMContentLoaded', async ()=>{
+      el('year').textContent = new Date().getFullYear();
+      // Tabs
+      el('tabHome').onclick=()=>route();
+      el('tabDash').onclick=()=>openDashboard();
+      el('tabAccount').onclick=()=>openAccount();
+      el('tabUsers').onclick=()=>openUsers();
+      el('btnLogout').onclick=async()=>{ await supabase.auth.signOut(); route(); };
+
+      // Login/Signup
+      el('btnLogin').onclick=async()=>{ const email=el('loginEmail').value.trim(); const pw=el('loginPassword').value; const msg=el('loginMsg'); msg.textContent=''; const { error } = await supabase.auth.signInWithPassword({ email, password:pw }); if(error){ msg.textContent=error.message; } else { route(); } };
+      el('btnGoSignup').onclick=()=>{ hide('viewLogin'); show('viewSignup'); };
+      el('btnBackLogin').onclick=()=>{ hide('viewSignup'); show('viewLogin'); };
+      el('btnSignup').onclick=async()=>{ const name=el('suName').value.trim(); const rt=el('suRoleTitle').value.trim(); const email=el('suEmail').value.trim(); const pw=el('suPassword').value; const msg=el('suMsg'); msg.textContent=''; if(!name||!email||!pw){ msg.textContent='Vul alle velden in.'; return; } try{ const { data, error } = await supabase.auth.signUp({ email, password:pw, options:{ data:{ name } } }); if(error) throw error; // maak profiel (sales default). Admin kun je later via SQL zetten.
+        const { data:{ user } } = await supabase.auth.getUser(); if(user){ await supabase.from('profiles').upsert({ id:user.id, name, email, role_title:rt, role:'sales' }); }
+        msg.textContent = 'Account aangemaakt. Controleer eventueel je e‑mail en log in.'; }catch(e){ msg.textContent='Fout: '+(e.message||e); }
+      };
+
+      // Home
+      el('btnNewQuote').onclick=()=>openQuoteEdit(null);
+      el('btnEditQuote').onclick=()=>openQuoteList();
+
+      // Dashboard
+      el('dashPeriod').onchange=()=>openDashboard();
+
+      // Quotes
+      el('filterOwner').onchange=()=>renderQuoteRows();
+      el('quoteRows').onclick=(ev)=>{ const id=ev.target && ev.target.getAttribute('data-edit'); if(id) openQuoteEdit(id); };
+      el('btnNewQuoteFromList').onclick=()=>openQuoteEdit(null);
+      el('btnBackHome1').onclick=()=>route();
+      el('btnBackHome2').onclick=()=>route();
+      el('btnSaveQuote').onclick=()=>saveQuoteClick();
+      el('btnDeleteQuote').onclick=()=>deleteQuoteClick();
+
+      // Account
+      el('btnSaveProfile').onclick=()=>saveProfileClick();
+
+      // Users (Edge Function)
+      el('btnBulkInvite').onclick=()=>bulkInvite();
+      el('btnBackUsers').onclick=()=>openAccount();
+
+      // Auth state listener
+      supabase.auth.onAuthStateChange((_event, _session)=>{ route(); });
+
+      route();
+    });
+  </script>
+</body>
+</html>
