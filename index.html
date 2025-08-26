@@ -614,19 +614,14 @@
         setTimeout(()=>{ document.body.removeChild(iframe); toast.textContent='Printdialoog geopend. Kies "Opslaan als PDF".'; setTimeout(()=>toast.classList.add('hidden'), 4000); }, 500);
       }
 
-      // ===== EXPORT (PDF) =====
-      document.getElementById('btnExportPdf').addEventListener('click', async ()=>{
-        const toast=el('exportToast'); toast.classList.remove('hidden'); toast.textContent='PDF wordt voorbereid…';
-        const ok = await ensureHtml2Pdf();
-        if(ok && window.html2pdf){
-          const stack=await buildExportStack();
-          const opt={ margin:[0,0,0,0], filename:`ACW-offerte-${Date.now()}.pdf`, image:{type:'jpeg',quality:0.98}, html2canvas:{scale:2,useCORS:true}, jsPDF:{unit:'mm',format:'a4',orientation:'portrait'} };
-          try{ await window.html2pdf().set(opt).from(stack).save(); toast.textContent='PDF gedownload. ✔'; setTimeout(()=>toast.classList.add('hidden'), 3000); return; }
-          catch(e){ console.warn('html2pdf fout, val terug op print:', e); }
-        }
-        // Fallback (geen html2pdf beschikbaar)
-        await printFallback();
-      });
+// ===== EXPORT (PDF) – PURE PRINT =====
+document.getElementById('btnExportPdf').addEventListener('click', async ()=>{
+const toast = el('exportToast');
+toast.classList.remove('hidden');
+toast.textContent = 'PDF (print) wordt voorbereid…';
+await printFallback();
+setTimeout(()=>toast.classList.add('hidden'), 3000);
+});
 
       // ===== Zelftest =====
       el('btnSelfTest').addEventListener('click', async ()=>{
