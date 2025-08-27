@@ -239,8 +239,8 @@
           <div class="cover-overlay"></div>
           <div class="cover-body">
             <div class="cover-text">
-              <div class="cover-col" id="coverLeft"></div>
-              <div class="cover-col" id="coverRight"></div>
+            <div class="cover-col" id="coverLeft" data-print-lock="left"></div>
+            <div class="cover-col" id="coverRight" data-print-lock="right"></div>
             </div>
           </div>
         </div>
@@ -478,11 +478,18 @@
         }
         const sigs={ rd:'https://www.acwbv.nl/wp-content/uploads/2025/08/handtekening-roger.png', jvp:'https://www.acwbv.nl/wp-content/uploads/2025/08/handtekening-jaimy.png', dvp:'https://www.acwbv.nl/wp-content/uploads/2025/08/handtekening-daniel.png' };
         const sig=sigs[m.makerAbbr]||'';
-        html+=`<div class=\"sign-title\">Voor akkoord:</div>`;
-        html+=`<div class=\"sign-grid\">`;
-        html+=`  <div class=\"sign-left\">${sig?`<img src=\"${sig}\" alt=\"Handtekening\">`:''}<div class=\"sign-text\">ACW<br>${esc(m.makerName||'')}</div></div>`;
-        html+=`  <div class=\"sign-right\"><div class=\"sign-line\"></div><div class=\"sign-text\">${esc(m.companyName||'')}<br>${esc(m.contactFull||'')}</div></div>`;
+        html+=`<div class="sign-title">Voor akkoord:</div>`;
+        html+=`<div class="sign-grid signature-row">`;
+        html+=`  <div class="sign-left signature-col">`+
+        `${sig?`<img src="${sig}" alt="Handtekening">`:''}`+
+        `<div class="sign-text">ACW<br>${esc(m.makerName||'')}</div>`+
+      `</div>`;
+        html+=`  <div class="sign-right signature-col">`+
+        `<div class="sign-line signature-line"></div>`+
+        `<div class="sign-text">${esc(m.companyName||'')}<br>${esc(m.contactFull||'')}</div>`+
+      `</div>`;
         html+=`</div>`;
+
         el('notesContent').innerHTML=html;
         el('notesBg').style.backgroundImage = "url('https://www.acwbv.nl/wp-content/uploads/2025/08/Briefpapier-overige-pagina-1.jpg')";
         document.getElementById('notesPreviewSection').scrollIntoView({behavior:'smooth'});
@@ -598,6 +605,41 @@
             .acw-ul{ list-style:none; padding-left:0; margin:8px 0 0 }
             .acw-ul li{ position:relative; padding-left:20px; margin:6px 0; font-size:10pt }
             .acw-ul li::before{ content:""; position:absolute; left:0; top:0.95em; transform:translateY(-50%); width:11px; height:11px; background-image:url('https://www.acwbv.nl/wp-content/uploads/2025/08/Bulletpoint-ACW.png'); background-size:contain; background-repeat:no-repeat }
+          /* === PRINT STABILITY RULES (voorblad + ondertekenen) === */
+@media print{
+/* 1) Cover: twee tekstvakken als stabiele inline‑blocks met vaste kolombreedtes */
+[data-print-lock]{
+display:inline-block; /* stabieler dan flex/grid in print */
+vertical-align:top;
+width:48%;
+box-sizing:border-box;
+page-break-inside: avoid;
+}
+[data-print-lock="left"]{ margin-right:4%; }
+[data-print-lock] *{ line-height:1.25; } /* vaste line-height voorkomt reflow per pagina */
+
+
+/* 2) Ondertekenen: vaste kolommen, geen wrap/glitches */
+.signature-row{ display:block; page-break-inside: avoid; }
+.signature-col{ display:inline-block; vertical-align:top; width:48%; box-sizing:border-box; }
+.signature-col + .signature-col{ margin-left:4%; }
+
+
+.signature-line{ height:0; border-top:2px solid #000; margin:12px 0 8px; }
+.keep-inline{ display:inline-block; vertical-align:middle; }
+
+
+/* 3) Breek‑beheersing zodat blokken niet door midden scheuren */
+.page h2, .page h3, .page p, .signature-row, [data-print-lock]{
+orphans:3; widows:3; /* nettere tekst */
+break-inside: avoid; /* moderne syntax */
+page-break-inside: avoid; /* legacy */
+}
+
+
+/* 4) Font & metrieken consistent houden in print */
+body{ -webkit-text-size-adjust:100%; text-size-adjust:100%; }
+}          
           </style></head><body>`);
         pages.forEach(p=>{
           doc.write('<div class="page">');
