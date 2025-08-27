@@ -541,7 +541,36 @@
       el('btnUpdateCoverPreview').addEventListener('click',()=>{ updateCoverPreview(); document.getElementById('coverPreviewSection').scrollIntoView({behavior:'smooth'}); });
 
       // ===== EXPORT HELPERS =====
-      function clonePage(elm){
+      const assetCache={};
+      async function toDataUrl(url){
+        if(assetCache[url]) return assetCache[url];
+        const res=await fetch(url);
+        const blob=await res.blob();
+        const data=await new Promise(r=>{const fr=new FileReader(); fr.onload=()=>r(fr.result); fr.readAsDataURL(blob);});
+        assetCache[url]=data; return data;
+      }
+      async function inlineAssets(node){
+        for(const cls of ['.letter-bg','.cover-photo','.cover-overlay']){
+          for(const el of node.querySelectorAll(cls)){
+            const url=getBgUrl(el); if(!url) continue;
+            try{ el.style.backgroundImage=`url('${await toDataUrl(url)}')`; }catch(e){/* ignore */}
+          }
+        }
+        for(const img of node.querySelectorAll('img')){
+          const src=img.getAttribute('src');
+          if(src && !src.startsWith('data:')){
+            try{ img.src=await toDataUrl(src); }catch(e){/* ignore */}
+          }
+        }
+        const bp=await toDataUrl('https://www.acwbv.nl/wp-content/uploads/2025/08/Bulletpoint-ACW.png');
+        node.querySelectorAll('.acw-ul li').forEach(li=>{
+          li.style.backgroundImage=`url('${bp}')`;
+          li.style.backgroundRepeat='no-repeat';
+          li.style.backgroundPosition='0 0.95em';
+          li.style.backgroundSize='11px 11px';
+        });
+      }
+      async function clonePage(elm){
         const node=elm.cloneNode(true);
         node.querySelectorAll('.letter-bg').forEach(bg=>{
           const cs=getComputedStyle(bg);
@@ -549,6 +578,7 @@
           bg.style.backgroundSize=cs.backgroundSize;
           bg.style.backgroundPosition=cs.backgroundPosition;
         });
+        await inlineAssets(node);
         node.classList.add('page-break');
         return node;
       }
@@ -556,7 +586,9 @@
         const stack=document.getElementById('exportStack');
         stack.innerHTML='';
         const order=['coverPreviewSection','letterSection','pricesheetSection','notesPreviewSection'];
-        order.forEach(id=>{ const sec=document.getElementById(id); if(!sec) return; const page=sec.querySelector('.letter'); if(page) stack.appendChild(clonePage(page)); });
+        for(const id of order){
+          const sec=document.getElementById(id); if(!sec) continue; const page=sec.querySelector('.letter'); if(page) stack.appendChild(await clonePage(page));
+        }
         return stack;
       }
 
@@ -661,21 +693,36 @@ body{ -webkit-text-size-adjust:100%; text-size-adjust:100%; }
         setTimeout(()=>{ document.body.removeChild(iframe); toast.textContent='Printdialoog geopend. Kies "Opslaan als PDF".'; setTimeout(()=>toast.classList.add('hidden'), 4000); }, 500);
       }
 
-// ===== EXPORT (PDF) – pure print =====
-document.getElementById('btnExportPdf').addEventListener('click', function(){
-const toast = el('exportToast');
-toast.classList.remove('hidden');
-toast.textContent = 'PDF (print) wordt voorbereid…';
-// Open popup synchronously (user gesture preserved)
-let w = null;
-try { w = window.open('', 'PRINT', 'width=900,height=1200'); } catch(e){ w = null; }
-// Laat printFallback de rest afhandelen (incl. iframe‑fallback indien popup geblokkeerd)
-try {
-printFallback(w).then(()=>{
-toast.textContent = 'Print wordt gestart…';
-setTimeout(()=>toast.classList.add('hidden'), 3000);
-});
-} catch(err){ console.error(err); }
+// ===== EXPORT (PDF) – raster via html2canvas =====
+async function exportPdfRaster(){
+  await ensureRasterLibs();
+  const stack = await buildExportStack();
+  const pdf = new jspdf.jsPDF({orientation:'p', unit:'mm', format:'a4'});
+  const w = pdf.internal.pageSize.getWidth();
+  const h = pdf.internal.pageSize.getHeight();
+  const pages = Array.from(stack.children);
+  for(let i=0; i<pages.length; i++){
+    const canvas = await html2canvas(pages[i], {scale:2, useCORS:true, backgroundColor:'#fff'});
+    const img = canvas.toDataURL('image/jpeg', 0.95);
+    if(i>0) pdf.addPage();
+    pdf.addImage(img, 'JPEG', 0, 0, w, h);
+  }
+  pdf.save('offerte.pdf');
+  stack.innerHTML = '';
+}
+
+document.getElementById('btnExportPdf').addEventListener('click', async function(){
+  const toast = el('exportToast');
+  toast.classList.remove('hidden');
+  toast.textContent = 'PDF wordt gegenereerd…';
+  try{
+    await exportPdfRaster();
+    toast.textContent = 'PDF download gestart';
+  }catch(err){
+    console.error(err);
+    toast.textContent = 'Fout bij genereren PDF';
+  }
+  setTimeout(()=>toast.classList.add('hidden'), 4000);
 });
 
       async function ensureRasterLibs(){
