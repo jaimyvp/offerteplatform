@@ -661,21 +661,36 @@ body{ -webkit-text-size-adjust:100%; text-size-adjust:100%; }
         setTimeout(()=>{ document.body.removeChild(iframe); toast.textContent='Printdialoog geopend. Kies "Opslaan als PDF".'; setTimeout(()=>toast.classList.add('hidden'), 4000); }, 500);
       }
 
-// ===== EXPORT (PDF) – pure print =====
-document.getElementById('btnExportPdf').addEventListener('click', function(){
-const toast = el('exportToast');
-toast.classList.remove('hidden');
-toast.textContent = 'PDF (print) wordt voorbereid…';
-// Open popup synchronously (user gesture preserved)
-let w = null;
-try { w = window.open('', 'PRINT', 'width=900,height=1200'); } catch(e){ w = null; }
-// Laat printFallback de rest afhandelen (incl. iframe‑fallback indien popup geblokkeerd)
-try {
-printFallback(w).then(()=>{
-toast.textContent = 'Print wordt gestart…';
-setTimeout(()=>toast.classList.add('hidden'), 3000);
-});
-} catch(err){ console.error(err); }
+// ===== EXPORT (PDF) – raster via html2canvas =====
+async function exportPdfRaster(){
+  await ensureRasterLibs();
+  const stack = await buildExportStack();
+  const pdf = new jspdf.jsPDF({orientation:'p', unit:'mm', format:'a4'});
+  const w = pdf.internal.pageSize.getWidth();
+  const h = pdf.internal.pageSize.getHeight();
+  const pages = Array.from(stack.children);
+  for(let i=0; i<pages.length; i++){
+    const canvas = await html2canvas(pages[i], {scale:2, useCORS:true, backgroundColor:'#fff'});
+    const img = canvas.toDataURL('image/jpeg', 0.95);
+    if(i>0) pdf.addPage();
+    pdf.addImage(img, 'JPEG', 0, 0, w, h);
+  }
+  pdf.save('offerte.pdf');
+  stack.innerHTML = '';
+}
+
+document.getElementById('btnExportPdf').addEventListener('click', async function(){
+  const toast = el('exportToast');
+  toast.classList.remove('hidden');
+  toast.textContent = 'PDF wordt gegenereerd…';
+  try{
+    await exportPdfRaster();
+    toast.textContent = 'PDF download gestart';
+  }catch(err){
+    console.error(err);
+    toast.textContent = 'Fout bij genereren PDF';
+  }
+  setTimeout(()=>toast.classList.add('hidden'), 4000);
 });
 
       async function ensureRasterLibs(){
