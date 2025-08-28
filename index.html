@@ -160,12 +160,23 @@
         </div>
 
         <h3 class="title" style="font-size:16px;margin-top:14px">NAW-gegevens klant</h3>
-        <div class="row">
-          <div><label>Naam bedrijf *</label><input id="companyName" placeholder="Bedrijfsnaam"></div>
-          <div><label>Naam contactpersoon *</label><input id="contactFull" placeholder="Voornaam Achternaam"></div>
+        <div id="hoaMgmtRow" class="row hidden">
+          <div>
+            <label>Is de VvE in eigen of extern beheer?</label>
+            <select id="hoaMgmt">
+              <option value="">Kies...</option>
+              <option value="own">eigen beheer</option>
+              <option value="external">externe beheerder</option>
+            </select>
+          </div>
+        </div>
+        <div class="row" id="nawRow">
+          <div><label id="labelCompany">Naam bedrijf *</label><input id="companyName" placeholder="Bedrijfsnaam"></div>
+          <div id="managerField" class="hidden"><label id="labelManager">Naam beheerder *</label><input id="managerName"></div>
+          <div><label id="labelContactFull">Naam contactpersoon *</label><input id="contactFull" placeholder="Voornaam Achternaam"></div>
           <div><label>Voornaam contactpersoon</label><input id="contactFirst" placeholder="Wordt automatisch bepaald" readonly></div>
-          <div><label>Straat + huisnummer *</label><input id="street" placeholder="Straat 1"></div>
-          <div><label>Postcode + plaats *</label><input id="postalCity" placeholder="1234 AB, Plaats"></div>
+          <div><label id="labelStreet">Straat + huisnummer *</label><input id="street" placeholder="Straat 1"></div>
+          <div><label id="labelPostalCity">Postcode + plaats *</label><input id="postalCity" placeholder="1234 AB, Plaats"></div>
         </div>
 
         <h3 class="title" style="font-size:16px;margin-top:14px">Gegevens voorbrief</h3>
@@ -344,17 +355,46 @@
         const today=new Date();
         const iso=new Date(today.getTime()-today.getTimezoneOffset()*60000).toISOString().slice(0,10);
         el('letterDate').value=iso; DRAFT.meta.letterDate=iso;
+        renderNawForm();
       });
 
       // Basis events
       el('makerName').addEventListener('change',e=>{const abbr=e.target.selectedOptions[0]?.getAttribute('data-abbr')||''; el('makerAbbr').value=abbr; DRAFT.meta.makerName=e.target.value; DRAFT.meta.makerAbbr=abbr; updateRef();});
       el('nocoreNumber').addEventListener('input',()=>{DRAFT.meta.nocoreNumber=el('nocoreNumber').value; updateRef();});
       el('companyName').addEventListener('input',()=>{DRAFT.meta.companyName=el('companyName').value; updateRef();});
+      el('managerName').addEventListener('input',()=>{DRAFT.meta.managerName=el('managerName').value;});
       el('contactFull').addEventListener('input',()=>{DRAFT.meta.contactFull=el('contactFull').value; DRAFT.meta.contactFirst=deriveFirstName(DRAFT.meta.contactFull); el('contactFirst').value=DRAFT.meta.contactFirst;});
       el('street').addEventListener('input',()=>{DRAFT.meta.street=el('street').value;});
       el('postalCity').addEventListener('input',()=>{DRAFT.meta.postalCity=el('postalCity').value;});
       el('letterDate').addEventListener('input',()=>{DRAFT.meta.letterDate=el('letterDate').value;});
+      el('hoaMgmt').addEventListener('change',()=>{DRAFT.meta.hoaMgmt=el('hoaMgmt').value; renderNawForm();});
       function updateRef(){ const m=DRAFT.meta; const c=m.companyName?.trim(); const a=m.makerAbbr?.trim(); const n=m.nocoreNumber?.trim(); el('ourRef').value=(c&&a&&n)?`${c}-acw-${a}-${n}`:''; m.ourRef=el('ourRef').value; }
+      function renderNawForm(){
+        const isHoa=DRAFT.kind==='regular_hoa';
+        el('hoaMgmtRow').classList.toggle('hidden', !isHoa);
+        const mgmt=DRAFT.meta.hoaMgmt||'';
+        el('nawRow').classList.toggle('hidden', isHoa && !mgmt);
+        const lblCompany=el('labelCompany'), lblContact=el('labelContactFull'), lblStreet=el('labelStreet'), lblPostal=el('labelPostalCity'), managerField=el('managerField');
+        if(!isHoa){
+          managerField.classList.add('hidden');
+          lblCompany.textContent='Naam bedrijf';
+          lblContact.textContent='Naam contactpersoon';
+          lblStreet.textContent='Straat + huisnummer';
+          lblPostal.textContent='Postcode + plaats';
+        } else if(mgmt==='external'){
+          managerField.classList.remove('hidden');
+          lblCompany.textContent='Naam VvE';
+          lblContact.textContent='Naam contactpersoon';
+          lblStreet.textContent='Straat + huisnummer beheerder';
+          lblPostal.textContent='Postcode + plaats';
+        } else {
+          managerField.classList.add('hidden');
+          lblCompany.textContent='Naam VvE';
+          lblContact.textContent='Naam contactpersoon';
+          lblStreet.textContent='Straat + huisnummers VvE';
+          lblPostal.textContent='Postcode + plaats';
+        }
+      }
 
       // Voorbrief preview
       el('btnUpdatePreview').addEventListener('click',()=>{
@@ -365,7 +405,20 @@
 
         let html='';
         html+=`<div class=\"meta\" style=\"text-align:right; margin-top:10px\">Datum: ${formatDateDMY(m.letterDate||'')}</div><br>`;
-        html+=`<strong>${esc(m.companyName||'')}</strong><br><strong>T.a.v. ${esc(m.contactFull||'')}</strong><br><strong>${esc(m.street||'')}</strong><br><strong>${esc(m.postalCity||'')}</strong><br><br>`;
+        let headerLines=[];
+        if(DRAFT.kind==='regular_hoa' && m.hoaMgmt==='external'){
+          headerLines.push(`<strong>${esc(m.companyName||'')}</strong>`);
+          headerLines.push(`<strong>P/a ${esc(m.managerName||'')}</strong>`);
+          headerLines.push(`<strong>T.a.v. ${esc(m.contactFull||'')}</strong>`);
+          headerLines.push(`<strong>${esc(m.street||'')}</strong>`);
+          headerLines.push(`<strong>${esc(m.postalCity||'')}</strong>`);
+        } else {
+          headerLines.push(`<strong>${esc(m.companyName||'')}</strong>`);
+          headerLines.push(`<strong>T.a.v. ${esc(m.contactFull||'')}</strong>`);
+          headerLines.push(`<strong>${esc(m.street||'')}</strong>`);
+          headerLines.push(`<strong>${esc(m.postalCity||'')}</strong>`);
+        }
+        html+=headerLines.join('<br>')+'<br><br>';
         html+=`<em>Onze referentie: ${esc(m.ourRef||'')}</em><br><em>Betreft: ${esc(subject||'')}</em><br><br>`;
         html+=`Beste ${esc(m.contactFirst||'')},<br><br>${nl2br(body||'')}<br><br>`;
         html+=`<div class=\"signature\">Met vriendelijke groet,<br><br>${sig?`<img src=\"${sig}\" style=\"height:100px\" alt=\"Handtekening\"><br>`:''}ACW<br>${esc(m.makerName||'')}<br><em>${esc(role)}</em></div>`;
@@ -534,10 +587,23 @@
       function updateCoverPreview(){
         const m=DRAFT.meta;
         const summary=(el('coverSummary').value||'').trim();
-        const left=`<p class=\"label\">Voorstel t.b.v.:</p>`+
-          `<p>${esc(m.companyName||'')}</p>`+
-          `<p>${esc(m.street||'')}</p>`+
-          `<p>${esc(m.postalCity||'')}</p>`;
+        let left='<p class=\"label\">Voorstel t.b.v.:</p>';
+        if(DRAFT.kind==='regular_hoa'){
+          if(m.hoaMgmt==='external'){
+            left+=`<p>${esc(m.companyName||'')}</p>`+
+                   `<p>${esc(m.managerName||'')}</p>`+
+                   `<p>${esc(m.contactFull||'')}</p>`;
+          } else {
+            left+=`<p>${esc(m.companyName||'')}</p>`+
+                   `<p>${esc(m.contactFull||'')}</p>`+
+                   `<p>${esc(m.street||'')}</p>`+
+                   `<p>${esc(m.postalCity||'')}</p>`;
+          }
+        } else {
+          left+=`<p>${esc(m.companyName||'')}</p>`+
+                 `<p>${esc(m.street||'')}</p>`+
+                 `<p>${esc(m.postalCity||'')}</p>`;
+        }
         const right=`<p class=\"label\">Voorstel m.b.t.:</p>`+
           `<p>${esc(summary)}</p>`;
         el('coverLeft').innerHTML=left;
