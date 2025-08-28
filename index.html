@@ -62,8 +62,17 @@
       padding-left:20px;
       margin:6px 0;
       font-size:10pt;
-      background:url('https://www.acwbv.nl/wp-content/uploads/2025/08/Bulletpoint-ACW.png') no-repeat 0 0.95em;
-      background-size:11px 11px;
+    }
+    .acw-ul li::before{
+      content:"";
+      position:absolute;
+      left:0;
+      top:0.95em;
+      width:11px;
+      height:11px;
+      background:var(--acw-red);
+      border-radius:50%;
+      transform:translateY(-50%);
     }
 
     .note{ padding:10px 12px; background:#f3f4f6; border:1px solid #e5e7eb; border-radius:10px; font-size:14px }
@@ -72,6 +81,7 @@
     .note-add{ width:38px; height:38px; border-radius:10px; border:none; background:var(--acw-red); color:#fff; font-weight:800; font-size:20px; cursor:pointer; line-height:0 }
     .notes-list{ margin-top:10px }
     .notes-list .item{ display:flex; align-items:flex-start; gap:8px; margin:6px 0; font-size:10pt }
+    .notes-list .bullet{ width:12px; height:12px; background:var(--acw-red); border-radius:50%; margin-top:6px; flex-shrink:0 }
     .notes-list .remove{ background:none; border:none; color:#b91c1c; font-size:18px; cursor:pointer; line-height:1 }
 
     /* Ondertekenen blok */
@@ -468,7 +478,7 @@
         list.innerHTML='';
         DRAFT.notes.forEach((t,idx)=>{
           const row=document.createElement('div'); row.className='item';
-          row.innerHTML=`<img src='https://www.acwbv.nl/wp-content/uploads/2025/08/Bulletpoint-ACW.png' alt='' style='width:12px;height:12px;margin-top:6px'> <div style='flex:1'>${esc(t)}</div> <button class='remove' title='Verwijderen'>&times;</button>`;
+          row.innerHTML=`<span class='bullet'></span> <div style='flex:1'>${esc(t)}</div> <button class='remove' title='Verwijderen'>&times;</button>`;
           row.querySelector('.remove').addEventListener('click',()=>{ DRAFT.notes.splice(idx,1); renderNotesList(); });
           list.appendChild(row);
         });
@@ -570,27 +580,7 @@
             try{ img.src=await toDataUrl(src); }catch(e){/* ignore */}
           }
         }
-        const bp=await toDataUrl('https://www.acwbv.nl/wp-content/uploads/2025/08/Bulletpoint-ACW.png');
-        node.querySelectorAll('.acw-ul').forEach(ul=>{
-          ul.style.listStyle='none';
-          ul.style.paddingLeft='0';
-          ul.style.margin='8px 0 0';
-        });
-        node.querySelectorAll('.acw-ul li').forEach(li=>{
-          li.style.listStyle='none';
-          li.style.position='relative';
-          li.style.paddingLeft='20px';
-          li.style.margin='6px 0';
-          li.style.fontSize='10pt';
-          const img=document.createElement('img');
-          img.src=bp;
-          img.style.position='absolute';
-          img.style.left='0';
-          img.style.top='0.55em';
-          img.style.width='11px';
-          img.style.height='11px';
-          li.insertBefore(img, li.firstChild);
-        });
+        // Bulletpoints are rendered via CSS ::before; no extra handling needed
       }
       async function clonePage(elm){
         const node=elm.cloneNode(true);
@@ -659,7 +649,8 @@
             table.pricetable th{ background:#D52B1E; color:#fff; font-weight:700 }
             table.pricetable td.bold{ font-weight:700 }
             .acw-ul{ list-style:none; padding-left:0; margin:8px 0 0 }
-            .acw-ul li{ position:relative; padding-left:20px; margin:6px 0; font-size:10pt; background:url('https://www.acwbv.nl/wp-content/uploads/2025/08/Bulletpoint-ACW.png') no-repeat 0 0.95em; background-size:11px 11px; }
+            .acw-ul li{ position:relative; padding-left:20px; margin:6px 0; font-size:10pt; }
+            .acw-ul li::before{ content:""; position:absolute; left:0; top:0.95em; width:11px; height:11px; background:#D52B1E; border-radius:50%; transform:translateY(-50%); }
             .sign-title{ margin-top:24px; margin-bottom:10px; font-size:10pt }
             .sign-left img{ height:100px; display:block; margin-bottom:8px }
             .sign-right{ margin-top:108px }
