@@ -62,17 +62,8 @@
       padding-left:20px;
       margin:6px 0;
       font-size:10pt;
-    }
-    .acw-ul li::before{
-      content:"";
-      position:absolute;
-      left:0;
-      top:0.95em;
-      width:11px;
-      height:11px;
-      background:var(--acw-red);
-      border-radius:50%;
-      transform:translateY(-50%);
+      background:url('https://www.acwbv.nl/wp-content/uploads/2025/08/Bulletpoint-ACW.png') no-repeat 0 0.95em;
+      background-size:11px 11px;
     }
 
     .note{ padding:10px 12px; background:#f3f4f6; border:1px solid #e5e7eb; border-radius:10px; font-size:14px }
@@ -271,6 +262,7 @@
         <h2 class="title">10) Exporteren</h2>
         <p class="muted">Exporteer alles naar <strong>één PDF</strong> in de volgorde: Voorblad → Voorbrief → Prijzenoverzicht → Toelichting</p>
         <button class="btn" id="btnExportPdf">Exporteren als PDF</button>
+        <button class="btn" id="btnPrintPdf" style="margin-left:8px">Printen als PDF</button>
         <div id="exportToast" class="note ok hidden" style="margin-top:10px">PDF wordt gegenereerd…</div>
       </section>
 
@@ -580,7 +572,12 @@
             try{ img.src=await toDataUrl(src); }catch(e){/* ignore */}
           }
         }
-        // Bulletpoints are rendered via CSS ::before; no extra handling needed
+        try{
+          const bp=await toDataUrl('https://www.acwbv.nl/wp-content/uploads/2025/08/Bulletpoint-ACW.png');
+          node.querySelectorAll('.acw-ul li').forEach(li=>{
+            li.style.backgroundImage=`url('${bp}')`;
+          });
+        }catch(e){/* ignore */}
       }
       async function clonePage(elm){
         const node=elm.cloneNode(true);
@@ -622,6 +619,9 @@
         const toast=el('exportToast');
         toast.classList.remove('hidden'); toast.textContent='PDF (print) wordt voorbereid…';
         const pages=collectPages();
+        const bpUrl='https://www.acwbv.nl/wp-content/uploads/2025/08/Bulletpoint-ACW.png';
+        let bp=bpUrl;
+        try{ bp=await toDataUrl(bpUrl); }catch(e){}
         const iframe=document.createElement('iframe');
         iframe.style.position='fixed'; iframe.style.right='0'; iframe.style.bottom='0'; iframe.style.width='0'; iframe.style.height='0'; iframe.style.border='0';
         document.body.appendChild(iframe);
@@ -649,8 +649,7 @@
             table.pricetable th{ background:#D52B1E; color:#fff; font-weight:700 }
             table.pricetable td.bold{ font-weight:700 }
             .acw-ul{ list-style:none; padding-left:0; margin:8px 0 0 }
-            .acw-ul li{ position:relative; padding-left:20px; margin:6px 0; font-size:10pt; }
-            .acw-ul li::before{ content:""; position:absolute; left:0; top:0.95em; width:11px; height:11px; background:#D52B1E; border-radius:50%; transform:translateY(-50%); }
+            .acw-ul li{ position:relative; padding-left:20px; margin:6px 0; font-size:10pt; background:url('${bp}') no-repeat 0 0.95em; background-size:11px 11px; }
             .sign-title{ margin-top:24px; margin-bottom:10px; font-size:10pt }
             .sign-left img{ height:100px; display:block; margin-bottom:8px }
             .sign-right{ margin-top:108px }
@@ -741,6 +740,9 @@ document.getElementById('btnExportPdf').addEventListener('click', async function
     return;
   }
   setTimeout(()=>toast.classList.add('hidden'), 4000);
+});
+document.getElementById('btnPrintPdf').addEventListener('click', async function(){
+  await printFallback();
 });
 
       async function ensureRasterLibs(){
