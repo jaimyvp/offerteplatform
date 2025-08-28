@@ -720,7 +720,8 @@ document.getElementById('btnExportPdf').addEventListener('click', async function
     toast.textContent = 'PDF download gestart';
   }catch(err){
     console.error(err);
-    toast.textContent = 'Fout bij genereren PDF';
+    await printFallback();
+    return;
   }
   setTimeout(()=>toast.classList.add('hidden'), 4000);
 });
