@@ -62,8 +62,18 @@
       padding-left:20px;
       margin:6px 0;
       font-size:10pt;
-      background:url('https://www.acwbv.nl/wp-content/uploads/2025/08/Bulletpoint-ACW.png') no-repeat 0 0.95em;
-      background-size:11px 11px;
+    }
+    .acw-ul li::before{
+      content:"";
+      position:absolute;
+      left:0;
+      top:0.95em;
+      transform:translateY(-50%);
+      width:11px;
+      height:11px;
+      background:url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMSIgaGVpZ2h0PSIxMSI+PGNpcmNsZSBjeD0iNS41IiBjeT0iNS41IiByPSI1LjUiIGZpbGw9IiNENTJCMUUiLz48L3N2Zz4=") no-repeat center/contain;
+      -webkit-print-color-adjust:exact;
+      print-color-adjust:exact;
     }
 
     .note{ padding:10px 12px; background:#f3f4f6; border:1px solid #e5e7eb; border-radius:10px; font-size:14px }
@@ -572,12 +582,6 @@
             try{ img.src=await toDataUrl(src); }catch(e){/* ignore */}
           }
         }
-        try{
-          const bp=await toDataUrl('https://www.acwbv.nl/wp-content/uploads/2025/08/Bulletpoint-ACW.png');
-          node.querySelectorAll('.acw-ul li').forEach(li=>{
-            li.style.backgroundImage=`url('${bp}')`;
-          });
-        }catch(e){/* ignore */}
       }
       async function clonePage(elm){
         const node=elm.cloneNode(true);
@@ -619,9 +623,7 @@
         const toast=el('exportToast');
         toast.classList.remove('hidden'); toast.textContent='PDF (print) wordt voorbereid…';
         const pages=collectPages();
-        const bpUrl='https://www.acwbv.nl/wp-content/uploads/2025/08/Bulletpoint-ACW.png';
-        let bp=bpUrl;
-        try{ bp=await toDataUrl(bpUrl); }catch(e){}
+        const bp='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMSIgaGVpZ2h0PSIxMSI+PGNpcmNsZSBjeD0iNS41IiBjeT0iNS41IiByPSI1LjUiIGZpbGw9IiNENTJCMUUiLz48L3N2Zz4=';
         const iframe=document.createElement('iframe');
         iframe.style.position='fixed'; iframe.style.right='0'; iframe.style.bottom='0'; iframe.style.width='0'; iframe.style.height='0'; iframe.style.border='0';
         document.body.appendChild(iframe);
@@ -649,7 +651,8 @@
             table.pricetable th{ background:#D52B1E; color:#fff; font-weight:700 }
             table.pricetable td.bold{ font-weight:700 }
             .acw-ul{ list-style:none; padding-left:0; margin:8px 0 0 }
-            .acw-ul li{ position:relative; padding-left:20px; margin:6px 0; font-size:10pt; background:url('${bp}') no-repeat 0 0.95em; background-size:11px 11px; }
+            .acw-ul li{ position:relative; padding-left:20px; margin:6px 0; font-size:10pt; }
+            .acw-ul li::before{ content:''; position:absolute; left:0; top:0.95em; transform:translateY(-50%); width:11px; height:11px; background:url('${bp}') no-repeat center/contain; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
             .sign-title{ margin-top:24px; margin-bottom:10px; font-size:10pt }
             .sign-left img{ height:100px; display:block; margin-bottom:8px }
             .sign-right{ margin-top:108px }
