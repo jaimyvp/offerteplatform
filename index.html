@@ -58,7 +58,7 @@
     .raj-title{ font-family:'Rajdhani', sans-serif; font-weight:700 }
     .acw-ul{ list-style:none; padding-left:0; margin:8px 0 0 }
     .acw-ul li{ position:relative; padding-left:20px; margin:6px 0; font-size:10pt }
-    .acw-ul li::before{ content:""; position:absolute; left:0; top:0.95em; transform:translateY(-50%); width:11px; height:11px; background-image:url('https://www.acwbv.nl/wp-content/uploads/2025/08/Bulletpoint-ACW.png'); background-size:contain; background-repeat:no-repeat }
+    .acw-ul li::before{ content:'•'; position:absolute; left:0; top:0.2em; font-size:14px; color:var(--acw-red); }
 
     .note{ padding:10px 12px; background:#f3f4f6; border:1px solid #e5e7eb; border-radius:10px; font-size:14px }
     .ok{ color:#065f46; background:#ecfdf5; border-color:#a7f3d0 }
@@ -69,8 +69,9 @@
     .notes-list .remove{ background:none; border:none; color:#b91c1c; font-size:18px; cursor:pointer; line-height:1 }
 
     /* Ondertekenen blok */
-    .sign-title{ margin-top:60px; margin-bottom:10px; font-size:10pt }
-    .sign-grid{ display:grid; grid-template-columns: 1fr 1fr; column-gap:24px; row-gap:8px; align-items:end }
+    .sign-title{ margin-top:24px; margin-bottom:10px; font-size:10pt }
+    .sign-grid{ display:flex; gap:24px; align-items:flex-end }
+    .sign-grid > div{ flex:1 }
     .sign-left img{ height:100px; display:block; margin-bottom:8px }
     .sign-line{ border-top:2px solid #000; width:220px; margin-bottom:8px }
     .sign-text{ font-size:10pt; line-height:1.3 }
@@ -80,7 +81,7 @@
     .cover-photo{ position:absolute; inset:0; background-size:cover; background-position:center }
     .cover-overlay{ position:absolute; inset:0; background:url('https://www.acwbv.nl/wp-content/uploads/2025/08/Voorblad-template.png') center/cover no-repeat }
     /* Tekst exact in het rode vlak positioneren obv 1241x1756, x=45px, y=1120px (projectafspraak) */
-    .cover-text{ position:absolute; top:70%; left:13.6%; right:43.6%; display:flex; justify-content:space-between; gap:1px; }
+    .cover-text{ position:absolute; top:190mm; left:28mm; width:90mm; display:flex; justify-content:space-between; gap:1px; }
     .cover-col{ width:48%; }
     .cover-col p{ margin:3px 0 }
     .cover-col .label{ font-weight:700 }
@@ -627,7 +628,7 @@
             .bg-img{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover }
             .body{ position:relative; padding:28mm 22mm 24mm 22mm; font-size:10pt; line-height:1.5 }
             .cover-body{ position:relative; font-family:'Rajdhani', sans-serif; font-weight:500; color:#fff; }
-            .cover-text{ position:absolute; top:70%; left:13.6%; right:43.6%; display:flex; justify-content:space-between; gap:1px; }
+            .cover-text{ position:absolute; top:190mm; left:28mm; width:90mm; display:flex; justify-content:space-between; gap:1px; }
             .cover-col{ width:48% }
             .cover-col p{ margin:3px 0 }
             .cover-col .label{ font-weight:700 }
@@ -638,7 +639,11 @@
             table.pricetable td.bold{ font-weight:700 }
             .acw-ul{ list-style:none; padding-left:0; margin:8px 0 0 }
             .acw-ul li{ position:relative; padding-left:20px; margin:6px 0; font-size:10pt }
-            .acw-ul li::before{ content:""; position:absolute; left:0; top:0.95em; transform:translateY(-50%); width:11px; height:11px; background-image:url('https://www.acwbv.nl/wp-content/uploads/2025/08/Bulletpoint-ACW.png'); background-size:contain; background-repeat:no-repeat }
+            .acw-ul li::before{ content:'•'; position:absolute; left:0; top:0.2em; font-size:14px; color:#D52B1E; }
+            .sign-title{ margin-top:24px; margin-bottom:10px; font-size:10pt }
+            .sign-left img{ height:100px; display:block; margin-bottom:8px }
+            .sign-line{ border-top:2px solid #000; width:220px; margin-bottom:8px }
+            .sign-text{ font-size:10pt; line-height:1.3 }
           /* === PRINT STABILITY RULES (voorblad + ondertekenen) === */
 @media print{
 /* 1) Cover: twee tekstvakken als stabiele inline‑blocks met vaste kolombreedtes */
@@ -654,8 +659,8 @@ page-break-inside: avoid;
 
 
 /* 2) Ondertekenen: vaste kolommen, geen wrap/glitches */
-.signature-row{ display:block; page-break-inside: avoid; }
-.signature-col{ display:inline-block; vertical-align:top; width:48%; box-sizing:border-box; }
+.signature-row{ display:flex; page-break-inside: avoid; }
+.signature-col{ flex:0 0 48%; box-sizing:border-box; }
 .signature-col + .signature-col{ margin-left:4%; }
 
 
