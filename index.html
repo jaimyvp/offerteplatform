@@ -85,6 +85,9 @@
     .notes-list .bullet{ width:4px; height:4px; background:var(--acw-red); border-radius:50%; margin-top:6px; flex-shrink:0 }
     .notes-list .remove{ background:none; border:none; color:#b91c1c; font-size:18px; cursor:pointer; line-height:1 }
 
+    .spec-post{ border:1px solid #e5e7eb; border-radius:10px; padding:10px 12px; margin-bottom:10px; position:relative }
+    .spec-post .remove{ background:none; border:none; color:#b91c1c; font-size:18px; cursor:pointer; line-height:1; position:absolute; top:8px; right:8px }
+
     /* Ondertekenen blok */
     .sign-title{ margin-top:24px; margin-bottom:10px; font-size:10pt }
     .sign-grid{ display:flex; gap:24px; align-items:flex-start }
@@ -431,14 +434,68 @@
 
       // Pricing fields
       function renderPricingFields(){
-        const wrap=el('pricingFields'); wrap.innerHTML=''; let html='';
+        const wrap=el('pricingFields'); wrap.innerHTML='';
+        const parseDec=v=> Number(String(v).replace(/\./g,'').replace(',','.'));
+
+        if(DRAFT.kind==='specialist'){
+          wrap.className='';
+          if(!Array.isArray(DRAFT.pricing.posts)) DRAFT.pricing.posts=[{price:0,freq:'once',turns:0}];
+
+          function renderPosts(){
+            wrap.innerHTML='';
+            DRAFT.pricing.posts.forEach((post,idx)=>{
+              const block=document.createElement('div');
+              block.className='spec-post';
+              block.innerHTML=`<div style=\"font-weight:700;margin-bottom:6px\">Post ${idx+1}</div>
+              <div class=\"row\">
+                <div class=\"currency\"><label>Prijs per beurt *</label><span class=\"prefix\">€</span><input data-field=\"price\" inputmode=\"decimal\" placeholder=\"0,00\" value=\"${post.price?post.price.toString().replace('.',','):''}\"></div>
+                <div><label>Frequentie *</label><select data-field=\"freq\"><option value=\"\">Kies...</option><option value=\"once\"${post.freq==='once'? ' selected':''}>Éénmalig</option><option value=\"multi\"${post.freq==='multi'? ' selected':''}>Meerdere keren</option></select></div>
+                <div class=\"turns ${post.freq==='multi'?'':'hidden'}\"><label>Beurten per jaar *</label><input type=\"number\" min=\"1\" step=\"1\" data-field=\"turns\" value=\"${post.turns||''}\"></div>
+                <div class=\"currency yearly ${post.freq==='multi'?'':'hidden'}\"><label>Prijs per jaar</label><span class=\"prefix\">€</span><input data-field=\"yearly\" readonly value=\"${post.freq==='multi'?euro((post.price||0)*(post.turns||0)):''}\"></div>
+              </div>
+              <button class=\"remove\" title=\"Verwijderen\">&times;</button>`;
+
+              const price=block.querySelector('[data-field=price]');
+              const freq=block.querySelector('[data-field=freq]');
+              const turns=block.querySelector('[data-field=turns]');
+              const yearly=block.querySelector('[data-field=yearly]');
+              function sync(){
+                post.price=parseDec(price.value||0)||0;
+                post.freq=freq.value||'';
+                if(post.freq==='multi'){
+                  post.turns=Number(turns.value||0);
+                  const y=(post.price||0)*(post.turns||0);
+                  post.yearly=y; yearly.value=euro(y);
+                }else{
+                  post.turns=0; post.yearly=0; if(turns) turns.value=''; yearly.value='';
+                }
+              }
+              price.addEventListener('input',sync);
+              freq.addEventListener('change',()=>{
+                block.querySelector('.turns').classList.toggle('hidden',freq.value!=='multi');
+                block.querySelector('.yearly').classList.toggle('hidden',freq.value!=='multi');
+                sync();
+              });
+              turns && turns.addEventListener('input',sync);
+              block.querySelector('.remove').addEventListener('click',()=>{ DRAFT.pricing.posts.splice(idx,1); renderPosts(); });
+              wrap.appendChild(block);
+            });
+            const addBtn=document.createElement('button');
+            addBtn.className='note-add'; addBtn.textContent='+'; addBtn.title='Post toevoegen';
+            addBtn.addEventListener('click',()=>{ DRAFT.pricing.posts.push({price:0,freq:'once',turns:0}); renderPosts(); });
+            wrap.appendChild(addBtn);
+          }
+
+          renderPosts();
+          return;
+        }
+
+        wrap.className='row';
+        let html='';
         if(DRAFT.kind==='regular_office'||DRAFT.kind==='regular_hoa'){
           html+=`<div class=\"currency\"><label>Prijs *</label><span class=\"prefix\">€</span><input id=\"price\" inputmode=\"decimal\" placeholder=\"0,00\"></div>`;
           html+=`<div><label>Facturatieschema *</label><select id=\"billing\"><option value=\"\">Kies...</option><option value=\"maand\">Per maand</option><option value=\"4w\">Per periode (4 weken)</option></select></div>`;
           html+=`<div><label>Hoogste frequentie *</label><select id=\"highFreq\"><option value=\"\">Kies...</option><option>5x per week</option><option>4x per week</option><option>3x per week</option><option>2x per week</option><option>1x per week</option><option>1x per maand</option></select></div>`;
-        } else if(DRAFT.kind==='specialist'){
-          html+=`<div class=\"currency\"><label>Prijs (per beurt) *</label><span class=\"prefix\">€</span><input id=\"price\" inputmode=\"decimal\" placeholder=\"0,00\"></div>`;
-          html+=`<div><label>Facturatie</label><input value=\"Per beurt\" readonly></div>`;
         } else if(DRAFT.kind==='glass'){
           html+=`<div class=\"currency\"><label>Prijs (per beurt) *</label><span class=\"prefix\">€</span><input id=\"price\" inputmode=\"decimal\" placeholder=\"0,00\"></div>`;
           html+=`<div><label>Frequentie (per jaar) *</label><input id=\"freq\" type=\"number\" min=\"1\" step=\"1\" placeholder=\"Bijv. 4\"></div>`;
@@ -447,7 +504,6 @@
         wrap.innerHTML=html;
 
         const price=el('price'), billing=el('billing'), freq=el('freq'), yearly=el('yearly'), highFreq=el('highFreq');
-        const parseDec=v=> Number(String(v).replace(/\./g,'').replace(',','.'));
         function sync(){
           if(price) DRAFT.pricing.price = parseDec(price.value||0) || 0;
           if(billing) DRAFT.pricing.billing = billing.value||'';
@@ -473,40 +529,59 @@
           if(!DRAFT.pricing.billing){ alert('Kies een facturatieschema.'); return; }
           if(!DRAFT.pricing.highFreq){ alert('Kies de hoogste frequentie.'); return; }
         }
-        if(DRAFT.kind==='specialist' && !(DRAFT.pricing.price>0)){ alert('Vul een geldige prijs in.'); return; }
+        if(DRAFT.kind==='specialist'){
+          const posts=DRAFT.pricing.posts||[];
+          if(!posts.length){ alert('Voeg minimaal één post toe.'); return; }
+          for(const post of posts){
+            if(!(post.price>0)){ alert('Vul een geldige prijs per beurt in.'); return; }
+            if(post.freq==='multi' && !(post.turns>0)){ alert('Vul geldige beurten per jaar in.'); return; }
+          }
+        }
         if(DRAFT.kind==='glass'){
           if(!(DRAFT.pricing.price>0)){ alert('Vul een geldige prijs in.'); return; }
           if(!(DRAFT.pricing.frequency>0)){ alert('Vul een geldige frequentie per jaar in.'); return; }
         }
 
-        const m=DRAFT.meta, p=DRAFT.pricing; const rows=[];
-        if(DRAFT.kind==='regular_office'||DRAFT.kind==='regular_hoa'){
-          rows.push(['Hoogste frequentie', p.highFreq||'-']);
-          rows.push(['Facturatieschema', p.billing==='maand'?'Per maand':'Per periode (4 weken)']);
-          const prijsLabel=p.billing==='maand'?'Prijs per maand':'Prijs per periode';
-          rows.push([prijsLabel, euro(p.price)]);
-        } else if(DRAFT.kind==='specialist'){
-          rows.push(['Prijs (per beurt)', euro(p.price)]);
-        } else if(DRAFT.kind==='glass'){
-          rows.push(['Frequentie (per jaar)', p.frequency]);
-          rows.push(['Prijs per beurt', euro(p.price)]);
-          rows.push(['Prijs per jaar', euro((p.price||0)*(p.frequency||0))]);
-        }
-
-        let html='';
+        const m=DRAFT.meta, p=DRAFT.pricing; let html='';
         html+=`<div class=\"meta\" style=\"text-align:right; margin-top:10px\">Datum: ${formatDateDMY(m.letterDate||'')}</div><br>`;
         html+=`<strong>${esc(m.companyName||'')}</strong><br><strong>T.a.v. ${esc(m.contactFull||'')}</strong><br><strong>${esc(m.street||'')}</strong><br><strong>${esc(m.postalCity||'')}</strong><br><br>`;
         html+=`<h1 class=\"raj-title\" style=\"font-size:16pt; margin:0 0 10px\">Prijzenoverzicht</h1>`;
         html+=`<table class=\"pricetable\">`;
-        html+=`<thead><tr><th>Omschrijving</th><th>Waarde</th></tr></thead><tbody>`;
-        rows.forEach(([label,val])=>{
-          const isPrice=/^Prijs/i.test(label);
-          html+=`<tr><td class=\"${isPrice?'bold':''}\">${esc(label)}</td><td class=\"${isPrice?'bold':''}\">${typeof val==='string'?esc(val):val}</td></tr>`;
-        });
-        html+=`</tbody>`;
-        if(DRAFT.kind==='glass'){
-          html+=`<tfoot><tr><td>Totaal per jaar</td><td>${euro((p.price||0)*(p.frequency||0))}</td></tr></tfoot>`;
+
+        if(DRAFT.kind==='specialist'){
+          html+=`<thead><tr><th>Post</th><th>Prijs per beurt</th><th>Frequentie</th><th>Prijs per jaar</th></tr></thead><tbody>`;
+          let total=0;
+          p.posts.forEach((post,idx)=>{
+            const freqText=post.freq==='multi'?`${post.turns}x per jaar`:'Éénmalig';
+            const yearly=post.freq==='multi'? (post.price||0)*(post.turns||0) : 0;
+            if(yearly>0) total+=yearly;
+            html+=`<tr><td class=\"bold\">Post ${idx+1}</td><td class=\"bold\">${euro(post.price)}</td><td>${esc(freqText)}</td><td>${yearly?euro(yearly):'-'}</td></tr>`;
+          });
+          html+=`</tbody>`;
+          if(total>0) html+=`<tfoot><tr><td colspan=\"3\">Totaal per jaar</td><td>${euro(total)}</td></tr></tfoot>`;
+        } else {
+          const rows=[];
+          if(DRAFT.kind==='regular_office'||DRAFT.kind==='regular_hoa'){
+            rows.push(['Hoogste frequentie', p.highFreq||'-']);
+            rows.push(['Facturatieschema', p.billing==='maand'?'Per maand':'Per periode (4 weken)']);
+            const prijsLabel=p.billing==='maand'?'Prijs per maand':'Prijs per periode';
+            rows.push([prijsLabel, euro(p.price)]);
+          } else if(DRAFT.kind==='glass'){
+            rows.push(['Frequentie (per jaar)', p.frequency]);
+            rows.push(['Prijs per beurt', euro(p.price)]);
+            rows.push(['Prijs per jaar', euro((p.price||0)*(p.frequency||0))]);
+          }
+          html+=`<thead><tr><th>Omschrijving</th><th>Waarde</th></tr></thead><tbody>`;
+          rows.forEach(([label,val])=>{
+            const isPrice=/^Prijs/i.test(label);
+            html+=`<tr><td class=\"${isPrice?'bold':''}\">${esc(label)}</td><td class=\"${isPrice?'bold':''}\">${typeof val==='string'?esc(val):val}</td></tr>`;
+          });
+          html+=`</tbody>`;
+          if(DRAFT.kind==='glass'){
+            html+=`<tfoot><tr><td>Totaal per jaar</td><td>${euro((p.price||0)*(p.frequency||0))}</td></tr></tfoot>`;
+          }
         }
+
         html+=`</table>`;
 
         el('priceContent').innerHTML=html;
