@@ -497,7 +497,7 @@
 
         if(DRAFT.kind==='regular_office'||DRAFT.kind==='regular_hoa'){
           wrap.className='';
-          if(!Array.isArray(DRAFT.pricing.posts)) DRAFT.pricing.posts=[{type:'',desc:'',price:0,billing:'',highFreq:'',sp_price:0,sp_freq:'once',sp_turns:0}];
+          if(!Array.isArray(DRAFT.pricing.posts)) DRAFT.pricing.posts=[{type:'',desc:'',price:0,billing:'',highFreq:'',yearly:0,sp_price:0,sp_freq:'once',sp_turns:0,sp_yearly:0}];
 
           function renderRegPosts(){
             wrap.innerHTML='';
@@ -511,6 +511,7 @@
                 <div class=\"currency\"><label>Prijs *</label><span class=\"prefix\">€</span><input data-field=\"price\" inputmode=\"decimal\" placeholder=\"0,00\" value=\"${post.price?post.price.toString().replace('.',','):''}\"></div>
                 <div><label>Facturatieschema *</label><select data-field=\"billing\"><option value=\"\">Kies...</option><option value=\"maand\"${post.billing==='maand'?' selected':''}>Per maand</option><option value=\"4w\"${post.billing==='4w'?' selected':''}>Per periode (4 weken)</option></select></div>
                 <div><label>Hoogste frequentie *</label><select data-field=\"highFreq\"><option value=\"\">Kies...</option><option>5x per week</option><option>4x per week</option><option>3x per week</option><option>2x per week</option><option>1x per week</option><option>1x per maand</option><option>6x per jaar</option><option>4x per jaar</option><option>1x per jaar</option></select></div>
+                <div class=\"currency yearly\"><label>Prijs per jaar/Totale prijs</label><span class=\"prefix\">€</span><input data-field=\"yearly\" readonly value=\"${post.yearly?euro(post.yearly):''}\"></div>
               </div></div>
               <div class=\"once-fields ${post.type==='once'?'':'hidden'}\"><div class=\"row\">
                 <div class=\"currency\"><label>Prijs per beurt *</label><span class=\"prefix\">€</span><input data-field=\"sp_price\" inputmode=\"decimal\" placeholder=\"0,00\" value=\"${post.sp_price?post.sp_price.toString().replace('.',','):''}\"></div>
@@ -529,6 +530,7 @@
               const sp_freq=block.querySelector('[data-field=sp_freq]');
               const sp_turns=block.querySelector('[data-field=sp_turns]');
               const sp_yearly=block.querySelector('[data-field=sp_yearly]');
+              const yearly=block.querySelector('[data-field=yearly]');
 
               function sync(){
                   post.desc=desc.value||'';
@@ -537,7 +539,11 @@
                   post.price=parseDec(price.value||0)||0;
                   post.billing=billing.value||'';
                   post.highFreq=highFreq.value||'';
+                  const mult=post.billing==='4w'?13:post.billing==='maand'?12:0;
+                  const y=(post.price||0)*mult;
+                  post.yearly=y; if(yearly) yearly.value=y?euro(y):'';
                 }else if(post.type==='once'){
+                  post.yearly=0; if(yearly) yearly.value='';
                   post.sp_price=parseDec(sp_price.value||0)||0;
                   post.sp_freq=sp_freq.value||'';
                   if(post.sp_freq==='multi'){
@@ -551,6 +557,7 @@
                   }
                 }else{
                   post.price=0; post.billing=''; post.highFreq='';
+                  post.yearly=0; if(yearly) yearly.value='';
                   post.sp_price=0; post.sp_freq='once'; post.sp_turns=0; post.sp_yearly=0;
                 }
               }
@@ -577,7 +584,7 @@
             });
             const addBtn=document.createElement('button');
             addBtn.className='note-add'; addBtn.textContent='+'; addBtn.title='Post toevoegen';
-            addBtn.addEventListener('click',()=>{ DRAFT.pricing.posts.push({type:'',desc:'',price:0,billing:'',highFreq:'',sp_price:0,sp_freq:'once',sp_turns:0}); renderRegPosts(); });
+            addBtn.addEventListener('click',()=>{ DRAFT.pricing.posts.push({type:'',desc:'',price:0,billing:'',highFreq:'',yearly:0,sp_price:0,sp_freq:'once',sp_turns:0,sp_yearly:0}); renderRegPosts(); });
             wrap.appendChild(addBtn);
           }
 
@@ -664,8 +671,10 @@
           p.posts.forEach((post,idx)=>{
             if(post.type==='regular'){
               const priceLabel = post.billing==='maand'? 'p/m' : 'p/4w';
+              const yearly = post.billing==='4w' ? (post.price||0)*13 : post.billing==='maand' ? (post.price||0)*12 : 0;
+              if(yearly>0) total+=yearly;
               const label=post.desc?`Post ${idx+1}: ${esc(post.desc)}`:`Post ${idx+1}`;
-              html+=`<tr><td class=\"bold\">${label}</td><td class=\"bold\">${euro(post.price)} ${priceLabel}</td><td>${esc(post.highFreq)}</td><td>-</td></tr>`;
+              html+=`<tr><td class=\"bold\">${label}</td><td class=\"bold\">${euro(post.price)} ${priceLabel}</td><td>${esc(post.highFreq)}</td><td>${yearly?euro(yearly):'-'}</td></tr>`;
             }else if(post.type==='once'){
               const freqText=post.sp_freq==='multi'?`${post.sp_turns}x per jaar`:'Éénmalig';
               const yearly=post.sp_freq==='multi'? (post.sp_price||0)*(post.sp_turns||0) : (post.sp_price||0);
