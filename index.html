@@ -8,6 +8,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
   <script defer src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/xlsx@0.19.2/dist/xlsx.full.min.js"></script>
   <style>
     :root{ --acw-red:#D52B1E; --acw-black:#222222 }
     *{ box-sizing:border-box }
@@ -53,6 +54,10 @@
     table.pricetable th{ background:var(--acw-red); color:#fff; font-weight:700 }
     table.pricetable td.bold{ font-weight:700 }
     table.pricetable tfoot td{ font-weight:700 }
+
+    /* Werkprogramma */
+    .workprog-body table{ width:100%; border-collapse:collapse; }
+    .workprog-body td, .workprog-body th{ border:1px solid #e5e7eb; padding:4px; font-size:10pt }
 
     /* Toelichting */
     .raj-title{ font-family:'Rajdhani', sans-serif; font-weight:700 }
@@ -228,9 +233,24 @@
         <div class="letter"><div class="letter-bg" id="priceBg"></div><div class="letter-body pricesheet-body" id="priceContent"></div></div>
       </section>
 
+      <!-- WERKPROGRAMMA -->
+      <section class="card" id="workprogramSection">
+        <h2 class="title">6) Werkprogramma</h2>
+        <p>Wil je een werkprogramma invoegen?</p>
+        <div class="chips" id="workprogChoice">
+          <div class="chip" data-choice="yes">Ja</div>
+          <div class="chip" data-choice="no">Nee</div>
+        </div>
+        <div id="workprogUpload" class="hidden" style="margin-top:10px">
+          <input type="file" id="workprogFile" accept=".xls,.xlsx,.xlsm,.xlsb,.csv" />
+          <div class="actions" style="margin-top:10px"><button id="btnWorkprogPreview" class="btn">Voorbeeld bijwerken</button></div>
+        </div>
+        <div id="workprogPreview"></div>
+      </section>
+
       <!-- TOELICHTING INVOER -->
       <section class="card" id="notesInputSection">
-        <h2 class="title">6) Aandachtspunten/toelichting – invoer</h2>
+        <h2 class="title">7) Aandachtspunten/toelichting – invoer</h2>
         <p class="muted">Voeg hier eventuele <strong>Bijzonderheden</strong> toe. Laat leeg als er geen bijzonderheden zijn.</p>
         <div class="notes-input">
           <input id="noteInput" placeholder="Bijzonderheid toevoegen..." />
@@ -242,13 +262,13 @@
 
       <!-- TOELICHTING PREVIEW -->
       <section class="card" id="notesPreviewSection">
-        <h2 class="title">7) Aandachtspunten/toelichting – voorbeeld</h2>
+        <h2 class="title">8) Aandachtspunten/toelichting – voorbeeld</h2>
         <div class="letter"><div class="letter-bg" id="notesBg"></div><div class="letter-body" id="notesContent"></div></div>
       </section>
 
       <!-- VOORBLAD INVOER -->
       <section class="card" id="coverInputSection">
-        <h2 class="title">8) Voorblad – invoer</h2>
+        <h2 class="title">9) Voorblad – invoer</h2>
         <div class="row">
           <div>
             <label>Beknopte samenvatting *</label>
@@ -268,7 +288,7 @@
 
       <!-- VOORBLAD PREVIEW -->
       <section class="card" id="coverPreviewSection">
-        <h2 class="title">9) Voorblad – voorbeeld</h2>
+        <h2 class="title">10) Voorblad – voorbeeld</h2>
         <div class="letter">
           <div class="letter-bg cover-photo" id="coverBg"></div>
           <div class="cover-overlay"></div>
@@ -283,8 +303,8 @@
 
       <!-- EXPORT -->
       <section class="card" id="exportSection">
-        <h2 class="title">10) Exporteren</h2>
-        <p class="muted">Exporteer alles naar <strong>één PDF</strong> in de volgorde: Voorblad → Voorbrief → Prijzenoverzicht → Toelichting</p>
+        <h2 class="title">11) Exporteren</h2>
+        <p class="muted">Exporteer alles naar <strong>één PDF</strong> in de volgorde: Voorblad → Voorbrief → Prijzenoverzicht → Werkprogramma → Toelichting</p>
         <button class="btn" id="btnExportPdf">Exporteren als PDF</button>
         <button class="btn" id="btnPrintPdf" style="margin-left:8px">Printen als PDF</button>
         <div id="exportToast" class="note ok hidden" style="margin-top:10px">PDF wordt gegenereerd…</div>
@@ -706,6 +726,37 @@
         document.getElementById('pricesheetSection').scrollIntoView({behavior:'smooth'});
       });
 
+      // Werkprogramma upload
+      const wpChips=document.querySelectorAll('#workprogChoice .chip');
+      wpChips.forEach(ch=>ch.addEventListener('click',()=>{
+        wpChips.forEach(c=>c.classList.remove('active'));
+        ch.classList.add('active');
+        if(ch.getAttribute('data-choice')==='yes'){
+          el('workprogUpload').classList.remove('hidden');
+        }else{
+          el('workprogUpload').classList.add('hidden');
+          el('workprogPreview').innerHTML='';
+        }
+      }));
+      el('btnWorkprogPreview').addEventListener('click', async ()=>{
+        const file=el('workprogFile').files[0];
+        if(!file){ alert('Kies een bestand.'); return; }
+        const buf=await file.arrayBuffer();
+        const wb=XLSX.read(buf,{type:'array'});
+        const container=el('workprogPreview');
+        container.innerHTML='';
+        wb.SheetNames.forEach(name=>{
+          const ws=wb.Sheets[name];
+          const html=XLSX.utils.sheet_to_html(ws,{header:'',footer:''});
+          const page=document.createElement('div');
+          page.className='letter';
+          page.innerHTML=`<div class="letter-bg"></div><div class="letter-body workprog-body">${html}</div>`;
+          page.querySelector('.letter-bg').style.backgroundImage="url('https://www.acwbv.nl/wp-content/uploads/2025/08/Briefpapier-overige-pagina-1.jpg')";
+          container.appendChild(page);
+        });
+        if(container.firstElementChild){ container.firstElementChild.scrollIntoView({behavior:'smooth'}); }
+      });
+
       // Toelichting vaste punten
       const GENERAL_NOTES=[
         'Genoemde bedragen en tarieven zijn exclusief het geldende BTW percentage en gebaseerd op een gehele gunning en de aangegeven handelingen en frequenties alsmede de bruto-uurlonen conform de CAO voor Schoonmaak- en Glazenwassersbedrijf 2025.',
@@ -856,23 +907,28 @@
       async function buildExportStack(){
         const stack=document.getElementById('exportStack');
         stack.innerHTML='';
-        const order=['coverPreviewSection','letterSection','pricesheetSection','notesPreviewSection'];
+        const order=['coverPreviewSection','letterSection','pricesheetSection','workprogramSection','notesPreviewSection'];
         for(const id of order){
-          const sec=document.getElementById(id); if(!sec) continue; const page=sec.querySelector('.letter'); if(page) stack.appendChild(await clonePage(page));
+          const sec=document.getElementById(id); if(!sec) continue;
+          const pages=sec.querySelectorAll('.letter');
+          for(const page of pages){ stack.appendChild(await clonePage(page)); }
         }
         return stack;
       }
 
       function collectPages(){
-        const order=['coverPreviewSection','letterSection','pricesheetSection','notesPreviewSection'];
+        const order=['coverPreviewSection','letterSection','pricesheetSection','workprogramSection','notesPreviewSection'];
         const pages=[];
         order.forEach(id=>{
-          const sec=document.getElementById(id); if(!sec) return; const page=sec.querySelector('.letter'); if(!page) return;
-          if(id==='coverPreviewSection'){
-            pages.push({ type:'cover', photoUrl:getBgUrl(page.querySelector('.cover-photo')), overlayUrl:getBgUrl(page.querySelector('.cover-overlay')), bodyHTML: page.querySelector('.cover-body')?.innerHTML||'' });
-          } else {
-            pages.push({ type:'letter', bgUrl:getBgUrl(page.querySelector('.letter-bg')), bodyHTML: page.querySelector('.letter-body')?.innerHTML||'' });
-          }
+          const sec=document.getElementById(id); if(!sec) return;
+          const letters=sec.querySelectorAll('.letter'); if(!letters.length) return;
+          letters.forEach(page=>{
+            if(id==='coverPreviewSection'){
+              pages.push({ type:'cover', photoUrl:getBgUrl(page.querySelector('.cover-photo')), overlayUrl:getBgUrl(page.querySelector('.cover-overlay')), bodyHTML: page.querySelector('.cover-body')?.innerHTML||'' });
+            } else {
+              pages.push({ type:'letter', bgUrl:getBgUrl(page.querySelector('.letter-bg')), bodyHTML: page.querySelector('.letter-body')?.innerHTML||'' });
+            }
+          });
         });
         return pages;
       }
@@ -1019,7 +1075,7 @@ return true;
       el('btnSelfTest').addEventListener('click', async ()=>{
         const out=el('selfTestOut');
         function ok(b){return b? '✅' : '❌'}
-        const pages=['coverPreviewSection','letterSection','pricesheetSection','notesPreviewSection'].map(id=>({id, has: !!document.getElementById(id)?.querySelector('.letter')}));
+        const pages=['coverPreviewSection','letterSection','pricesheetSection','workprogramSection','notesPreviewSection'].map(id=>({id, has: !!document.getElementById(id)?.querySelector('.letter')}));
         const h2p = !!window.html2pdf || await ensureHtml2Pdf();
         out.innerHTML = [
           `html2pdf beschikbaar: ${ok(h2p)}`,
