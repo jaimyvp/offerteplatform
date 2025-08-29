@@ -946,11 +946,16 @@
             c.replaceWith(img);
           }
         });
-        node.querySelectorAll('.letter-bg').forEach(bg=>{
-          const cs=getComputedStyle(bg);
-          bg.style.backgroundImage=cs.backgroundImage;
-          bg.style.backgroundSize=cs.backgroundSize;
-          bg.style.backgroundPosition=cs.backgroundPosition;
+        const origBgs=elm.querySelectorAll('.letter-bg, .cover-photo, .cover-overlay');
+        const cloneBgs=node.querySelectorAll('.letter-bg, .cover-photo, .cover-overlay');
+        cloneBgs.forEach((bg,i)=>{
+          const src=origBgs[i];
+          if(src){
+            const cs=getComputedStyle(src);
+            bg.style.backgroundImage=cs.backgroundImage;
+            bg.style.backgroundSize=cs.backgroundSize;
+            bg.style.backgroundPosition=cs.backgroundPosition;
+          }
         });
         await inlineAssets(node);
         node.classList.add('page-break');
