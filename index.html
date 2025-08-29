@@ -564,7 +564,7 @@
             html+=`<tr><td class=\"bold\">${label}</td><td class=\"bold\">${euro(post.price)}</td><td>${esc(freqText)}</td><td>${yearly?euro(yearly):'-'}</td></tr>`;
           });
           html+=`</tbody>`;
-          if(total>0) html+=`<tfoot><tr><td colspan=\"3\">Totaal per jaar</td><td>${euro(total)}</td></tr></tfoot>`;
+          if(total>0) html+=`<tfoot><tr><td colspan=\"3\">Totaal per jaar/Totale prijs</td><td>${euro(total)}</td></tr></tfoot>`;
         } else {
           const rows=[];
           if(DRAFT.kind==='regular_office'||DRAFT.kind==='regular_hoa'){
