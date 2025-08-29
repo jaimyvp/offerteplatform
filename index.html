@@ -934,6 +934,18 @@
       }
       async function clonePage(elm){
         const node=elm.cloneNode(true);
+        const origCanvases=elm.querySelectorAll('canvas');
+        const cloneCanvases=node.querySelectorAll('canvas');
+        cloneCanvases.forEach((c,i)=>{
+          const src=origCanvases[i];
+          if(src){
+            const img=document.createElement('img');
+            img.src=src.toDataURL('image/png');
+            img.style.width=c.style.width||src.style.width||`${src.width}px`;
+            img.style.height=c.style.height||src.style.height||`${src.height}px`;
+            c.replaceWith(img);
+          }
+        });
         node.querySelectorAll('.letter-bg').forEach(bg=>{
           const cs=getComputedStyle(bg);
           bg.style.backgroundImage=cs.backgroundImage;
@@ -956,27 +968,28 @@
         return stack;
       }
 
-      function collectPages(){
+      async function collectPages(){
         const order=['coverPreviewSection','letterSection','pricesheetSection','workprogramSection','notesPreviewSection'];
         const pages=[];
-        order.forEach(id=>{
-          const sec=document.getElementById(id); if(!sec) return;
-          const letters=sec.querySelectorAll('.letter'); if(!letters.length) return;
-          letters.forEach(page=>{
+        for(const id of order){
+          const sec=document.getElementById(id); if(!sec) continue;
+          const letters=sec.querySelectorAll('.letter'); if(!letters.length) continue;
+          for(const page of letters){
+            const clone=await clonePage(page);
             if(id==='coverPreviewSection'){
-              pages.push({ type:'cover', photoUrl:getBgUrl(page.querySelector('.cover-photo')), overlayUrl:getBgUrl(page.querySelector('.cover-overlay')), bodyHTML: page.querySelector('.cover-body')?.innerHTML||'' });
+              pages.push({ type:'cover', photoUrl:getBgUrl(clone.querySelector('.cover-photo')), overlayUrl:getBgUrl(clone.querySelector('.cover-overlay')), bodyHTML: clone.querySelector('.cover-body')?.innerHTML||'' });
             } else {
-              pages.push({ type:'letter', bgUrl:getBgUrl(page.querySelector('.letter-bg')), bodyHTML: page.querySelector('.letter-body')?.innerHTML||'' });
+              pages.push({ type:'letter', bgUrl:getBgUrl(clone.querySelector('.letter-bg')), bodyHTML: clone.querySelector('.letter-body')?.innerHTML||'' });
             }
-          });
-        });
+          }
+        }
         return pages;
       }
 
       async function printFallback(){
         const toast=el('exportToast');
         toast.classList.remove('hidden'); toast.textContent='PDF (print) wordt voorbereid…';
-        const pages=collectPages();
+        const pages=await collectPages();
         const bp='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iMzAiIHZpZXdCb3g9IjAgMCA0MCAzMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiBhcmlhLWhpZGRlbj0idHJ1ZSI+PHBvbHlnb24gcG9pbnRzPSIwLDggNDAsMCA0MCwzMCAwLDMwIiBmaWxsPSIjZTMwNjEzIi8+PC9zdmc+';
         const iframe=document.createElement('iframe');
         iframe.style.position='fixed'; iframe.style.right='0'; iframe.style.bottom='0'; iframe.style.width='0'; iframe.style.height='0'; iframe.style.border='0';
