@@ -9,6 +9,7 @@
   <script defer src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/xlsx@0.19.2/dist/xlsx.full.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
   <style>
     :root{ --acw-red:#D52B1E; --acw-black:#222222 }
     *{ box-sizing:border-box }
@@ -243,7 +244,7 @@
           <div class="chip" data-choice="no">Nee</div>
         </div>
         <div id="workprogUpload" class="hidden" style="margin-top:10px">
-          <input type="file" id="workprogFile" accept=".xls,.xlsx,.xlsm,.xlsb,.csv" />
+          <input type="file" id="workprogFile" accept=".xls,.xlsx,.xlsm,.xlsb,.csv,.pdf" />
           <div class="actions" style="margin-top:10px"><button id="btnWorkprogPreview" class="btn">Voorbeeld bijwerken</button></div>
         </div>
         <div id="workprogPreview"></div>
@@ -359,6 +360,10 @@
       const esc=s=>(s||'').replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
       const nl2br=s=>esc(s).replace(/\n/g,'<br>');
       const getBgUrl=(el)=>{ if(!el) return ''; const bi=getComputedStyle(el).backgroundImage; const m=/url\(["']?(.*?)["']?\)/.exec(bi||''); return m?m[1]:''; };
+
+      if(window.pdfjsLib){
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js';
+      }
 
       // TYPE chips
       document.querySelectorAll('#typeChips .chip').forEach(ch=>ch.addEventListener('click',()=>{
@@ -739,31 +744,58 @@
           el('workprogPreview').innerHTML='';
         }
       }));
-      el('btnWorkprogPreview').addEventListener('click', async ()=>{
-        const file=el('workprogFile').files[0];
-        if(!file){ alert('Kies een bestand.'); return; }
-        const buf=await file.arrayBuffer();
-        const wb=XLSX.read(buf,{type:'array'});
-        const container=el('workprogPreview');
-        container.innerHTML='';
-        // Build a separate preview page for each worksheet
-        wb.SheetNames.forEach(name=>{
-          const ws=wb.Sheets[name];
-          const html=XLSX.utils.sheet_to_html(ws,{header:'',footer:''});
-          const page=document.createElement('div');
-          page.className='letter';
-          page.innerHTML=`<div class="letter-bg"></div><div class="letter-body workprog-body"></div>`;
-          page.querySelector('.letter-bg').style.backgroundImage="url('https://www.acwbv.nl/wp-content/uploads/2025/08/Briefpapier-overige-pagina-1.jpg')";
-          const body = page.querySelector('.letter-body');
-          const title=document.createElement('h3');
-          title.className='workprog-title';
-          title.textContent=name;
-          body.appendChild(title);
-          body.insertAdjacentHTML('beforeend', html);
-          container.appendChild(page);
+        el('btnWorkprogPreview').addEventListener('click', async ()=>{
+          const file=el('workprogFile').files[0];
+          if(!file){ alert('Kies een bestand.'); return; }
+          const ext=(file.name.split('.').pop()||'').toLowerCase();
+          const container=el('workprogPreview');
+          container.innerHTML='';
+          const letterBg="url('https://www.acwbv.nl/wp-content/uploads/2025/08/Briefpapier-overige-pagina-1.jpg')";
+          if(['xls','xlsx','xlsm','xlsb','csv'].includes(ext)){
+            const buf=await file.arrayBuffer();
+            const wb=XLSX.read(buf,{type:'array'});
+            // Build a separate preview page for each worksheet
+            wb.SheetNames.forEach(name=>{
+              const ws=wb.Sheets[name];
+              const html=XLSX.utils.sheet_to_html(ws,{header:'',footer:''});
+              const page=document.createElement('div');
+              page.className='letter';
+              page.innerHTML=`<div class="letter-bg"></div><div class="letter-body workprog-body"></div>`;
+              page.querySelector('.letter-bg').style.backgroundImage=letterBg;
+              const body = page.querySelector('.letter-body');
+              const title=document.createElement('h3');
+              title.className='workprog-title';
+              title.textContent=name;
+              body.appendChild(title);
+              body.insertAdjacentHTML('beforeend', html);
+              container.appendChild(page);
+            });
+          }else if(ext==='pdf'){
+            const buf=await file.arrayBuffer();
+            const pdf=await pdfjsLib.getDocument({data:buf}).promise;
+            for(let i=1;i<=pdf.numPages;i++){
+              const p=await pdf.getPage(i);
+              const viewport=p.getViewport({scale:1.5});
+              const canvas=document.createElement('canvas');
+              const ctx=canvas.getContext('2d');
+              canvas.width=viewport.width;
+              canvas.height=viewport.height;
+              await p.render({canvasContext:ctx, viewport}).promise;
+              canvas.style.width='100%';
+              canvas.style.height='auto';
+              const page=document.createElement('div');
+              page.className='letter';
+              page.innerHTML=`<div class="letter-bg"></div><div class="letter-body workprog-body"></div>`;
+              page.querySelector('.letter-bg').style.backgroundImage=letterBg;
+              page.querySelector('.letter-body').appendChild(canvas);
+              container.appendChild(page);
+            }
+          }else{
+            alert('Bestandstype niet ondersteund. Upload een Excel- of PDF-bestand.');
+            return;
+          }
+          if(container.firstElementChild){ container.firstElementChild.scrollIntoView({behavior:'smooth'}); }
         });
-        if(container.firstElementChild){ container.firstElementChild.scrollIntoView({behavior:'smooth'}); }
-      });
 
       // Toelichting vaste punten
       const GENERAL_NOTES=[
