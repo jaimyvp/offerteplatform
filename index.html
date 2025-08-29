@@ -353,6 +353,9 @@
       const labels={regular_office:'Reguliere schoonmaak kantoren', regular_hoa:"Reguliere schoonmaak VvE's", specialist:'Specialistische reiniging', glass:'Glasbewassing'};
       const DRAFT=window.DRAFT||{ kind:null, meta:{}, pricing:{}, notes:[] }; window.DRAFT=DRAFT;
 
+      // Local letterhead to avoid cross‑origin issues
+      const LETTER_BG_DATA="data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHdpZHRoPSc1OTUnIGhlaWdodD0nODQyJz48cmVjdCB3aWR0aD0nMTAwJScgaGVpZ2h0PScxMDAlJyBmaWxsPSd3aGl0ZScvPjx0ZXh0IHg9JzUwJScgeT0nNDAnIGZvbnQtc2l6ZT0nMjQnIHRleHQtYW5jaG9yPSdtaWRkbGUnIGZpbGw9J2dyYXknPkxldHRlcmhlYWQ8L3RleHQ+PC9zdmc+";
+
       // Utils
       const euro=n=>`€ ${Number(n||0).toLocaleString('nl-NL',{minimumFractionDigits:2, maximumFractionDigits:2})}`;
       const formatDateDMY=iso=>{ if(!iso) return ''; const [y,m,d]=iso.split('-'); return `${d}-${m}-${y}`; };
@@ -453,7 +456,7 @@
         html+=`<div class=\"signature\">Met vriendelijke groet,<br><br>${sig?`<img src=\"${sig}\" style=\"height:100px\" alt=\"Handtekening\"><br>`:''}ACW<br>${esc(m.makerName||'')}<br><em>${esc(role)}</em></div>`;
 
         el('letterContent').innerHTML=html;
-        el('letterBg').style.backgroundImage="url('https://www.acwbv.nl/wp-content/uploads/2025/08/Briefpapier_Schoonmaak_2024-1_page-0001.jpg')";
+        el('letterBg').style.backgroundImage=`url('${LETTER_BG_DATA}')`;
         document.getElementById('letterSection').scrollIntoView({behavior:'smooth'});
       });
       el('btnApproveLetter').addEventListener('click',()=>{ el('approveNote').classList.remove('hidden'); document.getElementById('pricingSection').scrollIntoView({behavior:'smooth'}); });
@@ -728,7 +731,7 @@
         html+=`</table>`;
 
         el('priceContent').innerHTML=html;
-        el('priceBg').style.backgroundImage="url('https://www.acwbv.nl/wp-content/uploads/2025/08/Briefpapier-overige-pagina-1.jpg')";
+        el('priceBg').style.backgroundImage=`url('${LETTER_BG_DATA}')`;
         document.getElementById('pricesheetSection').scrollIntoView({behavior:'smooth'});
       });
 
@@ -750,7 +753,7 @@
           const ext=(file.name.split('.').pop()||'').toLowerCase();
           const container=el('workprogPreview');
           container.innerHTML='';
-          const letterBg="url('https://www.acwbv.nl/wp-content/uploads/2025/08/Briefpapier-overige-pagina-1.jpg')";
+          const letterBg=`url('${LETTER_BG_DATA}')`;
           if(['xls','xlsx','xlsm','xlsb','csv'].includes(ext)){
             const buf=await file.arrayBuffer();
             const wb=XLSX.read(buf,{type:'array'});
@@ -849,7 +852,7 @@
         html+=`</div>`;
 
         el('notesContent').innerHTML=html;
-        el('notesBg').style.backgroundImage = "url('https://www.acwbv.nl/wp-content/uploads/2025/08/Briefpapier-overige-pagina-1.jpg')";
+        el('notesBg').style.backgroundImage = `url('${LETTER_BG_DATA}')`;
         document.getElementById('notesPreviewSection').scrollIntoView({behavior:'smooth'});
       }
       el('btnUpdateNotesPreview').addEventListener('click',buildNotesPreview);
