@@ -58,6 +58,7 @@
     /* Werkprogramma */
     .workprog-body table{ width:100%; border-collapse:collapse; }
     .workprog-body td, .workprog-body th{ border:1px solid #e5e7eb; padding:4px; font-size:10pt }
+    .workprog-title{ margin:0 0 8px; font-size:12pt; font-weight:700 }
 
     /* Toelichting */
     .raj-title{ font-family:'Rajdhani', sans-serif; font-weight:700 }
@@ -745,13 +746,20 @@
         const wb=XLSX.read(buf,{type:'array'});
         const container=el('workprogPreview');
         container.innerHTML='';
+        // Build a separate preview page for each worksheet
         wb.SheetNames.forEach(name=>{
           const ws=wb.Sheets[name];
           const html=XLSX.utils.sheet_to_html(ws,{header:'',footer:''});
           const page=document.createElement('div');
           page.className='letter';
-          page.innerHTML=`<div class="letter-bg"></div><div class="letter-body workprog-body">${html}</div>`;
+          page.innerHTML=`<div class="letter-bg"></div><div class="letter-body workprog-body"></div>`;
           page.querySelector('.letter-bg').style.backgroundImage="url('https://www.acwbv.nl/wp-content/uploads/2025/08/Briefpapier-overige-pagina-1.jpg')";
+          const body = page.querySelector('.letter-body');
+          const title=document.createElement('h3');
+          title.className='workprog-title';
+          title.textContent=name;
+          body.appendChild(title);
+          body.insertAdjacentHTML('beforeend', html);
           container.appendChild(page);
         });
         if(container.firstElementChild){ container.firstElementChild.scrollIntoView({behavior:'smooth'}); }
