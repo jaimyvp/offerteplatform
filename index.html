@@ -1010,7 +1010,7 @@
             *{ -webkit-print-color-adjust: exact; print-color-adjust: exact }
             }
             .page{ width:210mm; height:297mm; position:relative; page-break-after:always; overflow:hidden; font-family:'Inter',sans-serif; }
-            .bg-img{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover }
+            .bg-img{ position:absolute; inset:0; width:100%; height:100%; background-size:cover; background-position:center }
             .body{ position:relative; padding:28mm 22mm 24mm 22mm; font-size:10pt; line-height:1.5 }
             .cover-body{ position:relative; font-family:'Rajdhani', sans-serif; font-weight:500; color:#fff; }
             .cover-text{ position:absolute; top:205mm; left:28mm; width:90mm; display:flex; justify-content:space-between; gap:1px; }
@@ -1068,9 +1068,9 @@ body{ -webkit-text-size-adjust:100%; text-size-adjust:100%; }
           </style></head><body>`);
         pages.forEach(p=>{
           doc.write('<div class="page">');
-          if(p.bgUrl) doc.write(`<img class="bg-img" src="${p.bgUrl}">`);
-          if(p.photoUrl) doc.write(`<img class="bg-img" src="${p.photoUrl}">`);
-          if(p.overlayUrl) doc.write(`<img class="bg-img" src="${p.overlayUrl}">`);
+          if(p.bgUrl) doc.write(`<div class="bg-img" style="background-image:url('${p.bgUrl}')"></div>`);
+          if(p.photoUrl) doc.write(`<div class="bg-img" style="background-image:url('${p.photoUrl}')"></div>`);
+          if(p.overlayUrl) doc.write(`<div class="bg-img" style="background-image:url('${p.overlayUrl}')"></div>`);
           doc.write(`<div class="${p.type==='cover'?'cover-body':'body'}">${p.bodyHTML}</div>`);
           doc.write('</div>');
         });
