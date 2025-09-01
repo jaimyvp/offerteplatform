@@ -9,6 +9,10 @@
   <script defer src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
   <script defer src="lib/pdf.js/pdf.min.js"></script>
+  <script defer src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+  <script defer src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+  <script defer src="lib/pdf-lib/pdf-lib.min.js"></script>
+  <script defer src="WerkprogrammaUploader.js"></script>
   <style>
     :root{ --acw-red:#D52B1E; --acw-black:#222222 }
     *{ box-sizing:border-box }
@@ -237,16 +241,7 @@
       <!-- WERKPROGRAMMA -->
       <section class="card" id="workprogramSection">
         <h2 class="title">6) Werkprogramma</h2>
-        <p>Wil je een werkprogramma invoegen?</p>
-        <div class="chips" id="workprogChoice">
-          <div class="chip" data-choice="yes">Ja</div>
-          <div class="chip" data-choice="no">Nee</div>
-        </div>
-        <div id="workprogUpload" class="hidden" style="margin-top:10px">
-          <input type="file" id="workprogFile" accept=".pdf" />
-          <div class="actions" style="margin-top:10px"><button id="btnWorkprogPreview" class="btn">Voorbeeld weergave</button></div>
-        </div>
-        <div id="workprogPreview"></div>
+        <div id="workprogReactRoot"></div>
       </section>
 
       <!-- TOELICHTING INVOER -->
@@ -748,49 +743,8 @@
         document.getElementById('pricesheetSection').scrollIntoView({behavior:'smooth'});
       });
 
-      // Werkprogramma upload
-      const wpChips=document.querySelectorAll('#workprogChoice .chip');
-      wpChips.forEach(chip=>chip.addEventListener('click',()=>{
-        wpChips.forEach(c=>c.classList.remove('active'));
-        chip.classList.add('active');
-        if(chip.dataset.choice==='yes'){
-          el('workprogUpload').classList.remove('hidden');
-        }else{
-          el('workprogUpload').classList.add('hidden');
-          el('workprogPreview').innerHTML='';
-        }
-      }));
-
-      el('btnWorkprogPreview').addEventListener('click', async () => {
-        const pdfjsLib = await ensurePdfJs();
-        if(!pdfjsLib){ alert('PDF-bibliotheek kon niet geladen worden.'); return; }
-        const file = el('workprogFile').files[0];
-        if(!file){ alert('Upload eerst een PDF-bestand.'); return; }
-
-        const buffer = await file.arrayBuffer();
-        const pdf = await pdfjsLib.getDocument({data: buffer}).promise;
-        const container = el('workprogPreview');
-        container.innerHTML='';
-
-        for(let i=1;i<=pdf.numPages;i++){
-          const page = await pdf.getPage(i);
-          const viewport = page.getViewport({scale:1.5});
-          const canvas = document.createElement('canvas');
-          const ctx = canvas.getContext('2d');
-          canvas.width = viewport.width; canvas.height = viewport.height;
-          await page.render({canvasContext: ctx, viewport}).promise;
-          const imgData = canvas.toDataURL('image/png');
-          const wrapper = document.createElement('div');
-          wrapper.className = 'letter';
-          wrapper.innerHTML = `<div class="letter-bg"></div><div class="letter-body workprog-body"><img src="${imgData}" /></div>`;
-          wrapper.querySelector('.letter-bg').style.backgroundImage = "url('https://www.acwbv.nl/wp-content/uploads/2025/08/Briefpapier-overige-pagina-1.jpg')";
-          container.appendChild(wrapper);
-        }
-
-        if(container.firstElementChild){
-          container.firstElementChild.scrollIntoView({behavior:'smooth'});
-        }
-      });
+      // Werkprogramma uploader (React)
+      initWerkprogrammaUploader();
 
       // Toelichting vaste punten
       const GENERAL_NOTES=[
