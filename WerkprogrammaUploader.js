@@ -10,6 +10,11 @@
       const f = ev.target.files[0];
       if(!f) return;
       setFile(f);
+      if(!window.pdfjsLib){
+        if(window.ensurePdfJs){
+          await window.ensurePdfJs();
+        }
+      }
       if(!window.pdfjsLib){ console.error('pdfjsLib missing'); return; }
       pdfjsLib.GlobalWorkerOptions.workerSrc = 'lib/pdf.js/pdf.worker.min.js';
       const buffer = await f.arrayBuffer();
