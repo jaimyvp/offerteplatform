@@ -8,7 +8,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
   <script defer src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
-  <script defer src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.2.67/pdf.min.js"></script>
+  <script defer src="lib/pdf.js/pdf.min.js"></script>
   <style>
     :root{ --acw-red:#D52B1E; --acw-black:#222222 }
     *{ box-sizing:border-box }
@@ -349,7 +349,7 @@
       try{
         await new Promise((res, rej)=>{
           const s=document.createElement('script');
-          s.src='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.2.67/pdf.min.js';
+          s.src='lib/pdf.js/pdf.min.js';
           s.onload=res; s.onerror=()=>rej(new Error('load fail'));
           document.head.appendChild(s);
         });
@@ -359,7 +359,7 @@
       const lib=window.pdfjsLib;
       if(!lib) return null;
       if(lib && lib.GlobalWorkerOptions){
-        lib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.2.67/pdf.worker.min.js';
+        lib.GlobalWorkerOptions.workerSrc='lib/pdf.js/pdf.worker.min.js';
       }
       return lib;
     }
