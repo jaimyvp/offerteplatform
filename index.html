@@ -244,7 +244,7 @@
         </div>
         <div id="workprogUpload" class="hidden" style="margin-top:10px">
           <input type="file" id="workprogFile" accept=".pdf" />
-          <div class="actions" style="margin-top:10px"><button id="btnWorkprogPreview" class="btn">Voorbeeld bijwerken</button></div>
+          <div class="actions" style="margin-top:10px"><button id="btnWorkprogPreview" class="btn">Voorbeeld weergave</button></div>
         </div>
         <div id="workprogPreview"></div>
       </section>
@@ -750,40 +750,46 @@
 
       // Werkprogramma upload
       const wpChips=document.querySelectorAll('#workprogChoice .chip');
-      wpChips.forEach(ch=>ch.addEventListener('click',()=>{
+      wpChips.forEach(chip=>chip.addEventListener('click',()=>{
         wpChips.forEach(c=>c.classList.remove('active'));
-        ch.classList.add('active');
-        if(ch.getAttribute('data-choice')==='yes'){
+        chip.classList.add('active');
+        if(chip.dataset.choice==='yes'){
           el('workprogUpload').classList.remove('hidden');
         }else{
           el('workprogUpload').classList.add('hidden');
           el('workprogPreview').innerHTML='';
         }
       }));
-      el('btnWorkprogPreview').addEventListener('click', async ()=>{
+
+      el('btnWorkprogPreview').addEventListener('click', async () => {
         const pdfjsLib = await ensurePdfJs();
         if(!pdfjsLib){ alert('PDF-bibliotheek kon niet geladen worden.'); return; }
-        const file=el('workprogFile').files[0];
-        if(!file){ alert('Kies een bestand.'); return; }
-        const buf=await file.arrayBuffer();
-        const pdf=await pdfjsLib.getDocument({data:buf}).promise;
-        const container=el('workprogPreview');
+        const file = el('workprogFile').files[0];
+        if(!file){ alert('Upload eerst een PDF-bestand.'); return; }
+
+        const buffer = await file.arrayBuffer();
+        const pdf = await pdfjsLib.getDocument({data: buffer}).promise;
+        const container = el('workprogPreview');
         container.innerHTML='';
+
         for(let i=1;i<=pdf.numPages;i++){
-          const pg=await pdf.getPage(i);
-          const viewport=pg.getViewport({scale:1.5});
-          const canvas=document.createElement('canvas');
-          const ctx=canvas.getContext('2d');
-          canvas.width=viewport.width; canvas.height=viewport.height;
-          await pg.render({canvasContext:ctx, viewport}).promise;
-          const img=canvas.toDataURL('image/png');
-          const page=document.createElement('div');
-          page.className='letter';
-          page.innerHTML=`<div class="letter-bg"></div><div class="letter-body workprog-body"><img src="${img}"></div>`;
-          page.querySelector('.letter-bg').style.backgroundImage="url('https://www.acwbv.nl/wp-content/uploads/2025/08/Briefpapier-overige-pagina-1.jpg')";
-          container.appendChild(page);
+          const page = await pdf.getPage(i);
+          const viewport = page.getViewport({scale:1.5});
+          const canvas = document.createElement('canvas');
+          const ctx = canvas.getContext('2d');
+          canvas.width = viewport.width; canvas.height = viewport.height;
+          await page.render({canvasContext: ctx, viewport}).promise;
+          const imgData = canvas.toDataURL('image/png');
+          const wrapper = document.createElement('div');
+          wrapper.className = 'letter';
+          wrapper.innerHTML = `<div class="letter-bg"></div><div class="letter-body workprog-body"><img src="${imgData}" /></div>`;
+          wrapper.querySelector('.letter-bg').style.backgroundImage = "url('https://www.acwbv.nl/wp-content/uploads/2025/08/Briefpapier-overige-pagina-1.jpg')";
+          container.appendChild(wrapper);
         }
-        if(container.firstElementChild){ container.firstElementChild.scrollIntoView({behavior:'smooth'}); }
+
+        if(container.firstElementChild){
+          container.firstElementChild.scrollIntoView({behavior:'smooth'});
+        }
       });
 
       // Toelichting vaste punten
