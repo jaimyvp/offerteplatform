@@ -1030,7 +1030,23 @@ async function exportPdfRaster(){
     if(i>0) pdf.addPage();
     pdf.addImage(img, 'JPEG', 0, 0, w, h);
   }
-  pdf.save('offerte.pdf');
+  if(window.workprogPdfBlob && window.PDFLib && PDFLib.PDFDocument){
+    const mainBytes = pdf.output('arraybuffer');
+    const mainDoc = await PDFLib.PDFDocument.load(mainBytes);
+    const workDoc = await PDFLib.PDFDocument.load(await window.workprogPdfBlob.arrayBuffer());
+    const workPages = await mainDoc.copyPages(workDoc, workDoc.getPageIndices());
+    workPages.forEach(p=>mainDoc.addPage(p));
+    const mergedBytes = await mainDoc.save();
+    const blob = new Blob([mergedBytes], {type:'application/pdf'});
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = 'offerte.pdf';
+    document.body.appendChild(link);
+    link.click();
+    setTimeout(()=>{ URL.revokeObjectURL(link.href); document.body.removeChild(link); }, 0);
+  }else{
+    pdf.save('offerte.pdf');
+  }
   stack.innerHTML = '';
 }
 
