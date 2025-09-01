@@ -4,6 +4,7 @@
 
   function WerkprogrammaUploader(){
     const [pages, setPages] = React.useState([]);
+    const [letterUrl, setLetterUrl] = React.useState(LETTER_URL);
 
     async function handleFile(ev){
       const f = ev.target.files[0];
@@ -17,6 +18,8 @@
       pdfjsLib.GlobalWorkerOptions.workerSrc = 'lib/pdf.js/pdf.worker.min.js';
       const buffer = await f.arrayBuffer();
       const pdf = await pdfjsLib.getDocument({data: buffer}).promise;
+      const uniqueLetterUrl = `${LETTER_URL}?v=${Date.now()}`;
+      setLetterUrl(uniqueLetterUrl);
       const imgs=[];
       for(let i=1;i<=pdf.numPages;i++){
         const page = await pdf.getPage(i);
@@ -34,7 +37,7 @@
         try{
           const existingPdf = await PDFLib.PDFDocument.load(buffer);
           const newPdf = await PDFLib.PDFDocument.create();
-          const letterBytes = await fetch(LETTER_URL, {mode:'cors'}).then(r=>r.arrayBuffer());
+          const letterBytes = await fetch(uniqueLetterUrl, {mode:'cors', cache:'no-cache'}).then(r=>r.arrayBuffer());
           const letterImage = await newPdf.embedJpg(letterBytes);
           const srcPages = existingPdf.getPages();
           for(const p of srcPages){
@@ -53,13 +56,26 @@
       }
     }
 
+    function previewWorkprog(){
+      if(window.workprogPdfBlob){
+        const url = URL.createObjectURL(window.workprogPdfBlob);
+        window.open(url);
+        setTimeout(()=>URL.revokeObjectURL(url), 0);
+      }else{
+        alert('Geen werkprogramma om te tonen.');
+      }
+    }
+
     return e('div', null,
       e('p', null, 'Wil je een werkprogramma toevoegen?'),
       e('input', {type:'file', accept:'.pdf', onChange:handleFile}),
       e('div', null, pages.map((src, idx) => e('div', {className:'letter', key:idx},
-        e('div', {className:'letter-bg'}, e('img',{src:LETTER_URL, crossOrigin:'anonymous', style:{width:'100%', height:'100%'}})),
+        e('div', {className:'letter-bg'}, e('img',{src:letterUrl, crossOrigin:'anonymous', style:{width:'100%', height:'100%'}})),
         e('div', {className:'letter-body workprog-body'}, e('img',{src, style:{width:'100%'}}))
       ))),
+      pages.length>0 && e('div', {className:'actions', style:{marginTop:'10px'}},
+        e('button', {className:'btn', onClick:previewWorkprog}, 'Preview werkprogramma')
+      ),
       pages.length>0 && e('div', {className:'note ok', style:{marginTop:'10px'}}, 'Werkprogramma wordt meegenomen in de export.')
     );
   }
