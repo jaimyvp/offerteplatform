@@ -346,10 +346,18 @@
     }
     async function ensurePdfJs(){
       if(window.pdfjsLib) return window.pdfjsLib;
-      await new Promise(res=>{
-        const t=setInterval(()=>{ if(window.pdfjsLib){ clearInterval(t); res(); } },50);
-      });
+      try{
+        await new Promise((res, rej)=>{
+          const s=document.createElement('script');
+          s.src='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.2.67/pdf.min.js';
+          s.onload=res; s.onerror=()=>rej(new Error('load fail'));
+          document.head.appendChild(s);
+        });
+      }catch(e){
+        return null;
+      }
       const lib=window.pdfjsLib;
+      if(!lib) return null;
       if(lib && lib.GlobalWorkerOptions){
         lib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.2.67/pdf.worker.min.js';
       }
@@ -371,7 +379,7 @@
       const nl2br=s=>esc(s).replace(/\n/g,'<br>');
       const getBgUrl=(el)=>{ if(!el) return ''; const bi=getComputedStyle(el).backgroundImage; const m=/url\(["']?(.*?)["']?\)/.exec(bi||''); return m?m[1]:''; };
 
-      ensurePdfJs().catch(()=>console.warn('PDF.js niet geladen; functionaliteit beperkt.'));
+      ensurePdfJs();
 
       // TYPE chips
       document.querySelectorAll('#typeChips .chip').forEach(ch=>ch.addEventListener('click',()=>{
