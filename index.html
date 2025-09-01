@@ -361,7 +361,11 @@
       const getBgUrl=(el)=>{ if(!el) return ''; const bi=getComputedStyle(el).backgroundImage; const m=/url\(["']?(.*?)["']?\)/.exec(bi||''); return m?m[1]:''; };
 
       const pdfjsLib = window['pdfjsLib'];
-      pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.2.67/pdf.worker.min.js';
+      if (pdfjsLib) {
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.2.67/pdf.worker.min.js';
+      } else {
+        console.warn('PDF.js niet geladen; functionaliteit beperkt.');
+      }
 
       // TYPE chips
       document.querySelectorAll('#typeChips .chip').forEach(ch=>ch.addEventListener('click',()=>{
