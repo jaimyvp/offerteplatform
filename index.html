@@ -934,9 +934,19 @@
           const letters=sec.querySelectorAll('.letter'); if(!letters.length) return;
           letters.forEach(page=>{
             if(id==='coverPreviewSection'){
-              pages.push({ type:'cover', photoUrl:getBgUrl(page.querySelector('.cover-photo')), overlayUrl:getBgUrl(page.querySelector('.cover-overlay')), bodyHTML: page.querySelector('.cover-body')?.innerHTML||'' });
+              pages.push({
+                type:'cover',
+                photoUrl:getBgUrl(page.querySelector('.cover-photo')),
+                overlayUrl:getBgUrl(page.querySelector('.cover-overlay')),
+                bodyHTML: page.querySelector('.cover-body')?.innerHTML||''
+              });
             } else {
-              pages.push({ type:'letter', bgUrl:getBgUrl(page.querySelector('.letter-bg')), bodyHTML: page.querySelector('.letter-body')?.innerHTML||'' });
+              const bodyHTML = page.querySelector('.letter-body')?.innerHTML || page.innerHTML;
+              pages.push({
+                type:'letter',
+                bgUrl:getBgUrl(page.querySelector('.letter-bg')),
+                bodyHTML
+              });
             }
           });
         });
