@@ -8,7 +8,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
   <script defer src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
-  <script defer src="https://cdn.jsdelivr.net/npm/xlsx@0.19.2/dist/xlsx.full.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.10.111/build/pdf.min.js"></script>
   <style>
     :root{ --acw-red:#D52B1E; --acw-black:#222222 }
     *{ box-sizing:border-box }
@@ -242,7 +242,7 @@
           <div class="chip" data-choice="no">Nee</div>
         </div>
         <div id="workprogUpload" class="hidden" style="margin-top:10px">
-          <input type="file" id="workprogFile" accept=".xls,.xlsx,.xlsm,.xlsb,.csv" />
+          <input type="file" id="workprogFile" accept=".pdf" />
           <div class="actions" style="margin-top:10px"><button id="btnWorkprogPreview" class="btn">Voorbeeld bijwerken</button></div>
         </div>
         <div id="workprogPreview"></div>
@@ -347,6 +347,7 @@
 
   <script>
     document.addEventListener('DOMContentLoaded', function(){
+      pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.10.111/build/pdf.worker.min.js';
       const el=id=>document.getElementById(id);
       const labels={regular_office:'Reguliere schoonmaak kantoren', regular_hoa:"Reguliere schoonmaak VvE's", specialist:'Specialistische reiniging', glass:'Glasbewassing'};
       const DRAFT=window.DRAFT||{ kind:null, meta:{}, pricing:{}, notes:[] }; window.DRAFT=DRAFT;
@@ -741,19 +742,28 @@
       el('btnWorkprogPreview').addEventListener('click', async ()=>{
         const file=el('workprogFile').files[0];
         if(!file){ alert('Kies een bestand.'); return; }
+        if(file.type!=='application/pdf'){ alert('Upload een PDF-bestand.'); return; }
         const buf=await file.arrayBuffer();
-        const wb=XLSX.read(buf,{type:'array'});
+        const pdf=await pdfjsLib.getDocument({data:buf}).promise;
         const container=el('workprogPreview');
         container.innerHTML='';
-        wb.SheetNames.forEach(name=>{
-          const ws=wb.Sheets[name];
-          const html=XLSX.utils.sheet_to_html(ws,{header:'',footer:''});
-          const page=document.createElement('div');
-          page.className='letter';
-          page.innerHTML=`<div class="letter-bg"></div><div class="letter-body workprog-body">${html}</div>`;
-          page.querySelector('.letter-bg').style.backgroundImage="url('https://www.acwbv.nl/wp-content/uploads/2025/08/Briefpapier-overige-pagina-1.jpg')";
-          container.appendChild(page);
-        });
+        for(let n=1;n<=pdf.numPages;n++){
+          const page=await pdf.getPage(n);
+          const viewport=page.getViewport({scale:1.5});
+          const canvas=document.createElement('canvas');
+          const ctx=canvas.getContext('2d');
+          canvas.width=viewport.width;
+          canvas.height=viewport.height;
+          await page.render({canvasContext:ctx, viewport}).promise;
+          const img=document.createElement('img');
+          img.src=canvas.toDataURL('image/png');
+          img.style.width='100%';
+          img.style.display='block';
+          const pageDiv=document.createElement('div');
+          pageDiv.className='letter';
+          pageDiv.appendChild(img);
+          container.appendChild(pageDiv);
+        }
         if(container.firstElementChild){ container.firstElementChild.scrollIntoView({behavior:'smooth'}); }
       });
 
