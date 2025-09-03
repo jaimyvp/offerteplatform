@@ -56,6 +56,7 @@
     table.pricetable tfoot td{ font-weight:700 }
 
     /* Werkprogramma */
+    .workprog-body{ padding:0 }
     .workprog-body table{ width:100%; border-collapse:collapse; }
     .workprog-body td, .workprog-body th{ border:1px solid #e5e7eb; padding:4px; font-size:10pt }
 
@@ -448,7 +449,7 @@
         html+=`<div class=\"signature\">Met vriendelijke groet,<br><br>${sig?`<img src=\"${sig}\" style=\"height:100px\" alt=\"Handtekening\"><br>`:''}ACW<br>${esc(m.makerName||'')}<br><em>${esc(role)}</em></div>`;
 
         el('letterContent').innerHTML=html;
-        el('letterBg').style.backgroundImage="url('https://www.acwbv.nl/wp-content/uploads/2025/08/Briefpapier_Schoonmaak_2024-1_page-0001.jpg')";
+        el('letterBg').style.backgroundImage="url('https://www.acwbv.nl/wp-content/uploads/2025/08/Briefpapier-overige-pagina-1.jpg')";
         document.getElementById('letterSection').scrollIntoView({behavior:'smooth'});
       });
       el('btnApproveLetter').addEventListener('click',()=>{ el('approveNote').classList.remove('hidden'); document.getElementById('pricingSection').scrollIntoView({behavior:'smooth'}); });
@@ -761,7 +762,14 @@
           img.style.display='block';
           const pageDiv=document.createElement('div');
           pageDiv.className='letter';
-          pageDiv.appendChild(img);
+          const bg=document.createElement('div');
+          bg.className='letter-bg';
+          bg.style.backgroundImage="url('https://www.acwbv.nl/wp-content/uploads/2025/08/Briefpapier-overige-pagina-1.jpg')";
+          const body=document.createElement('div');
+          body.className='letter-body workprog-body';
+          body.appendChild(img);
+          pageDiv.appendChild(bg);
+          pageDiv.appendChild(body);
           container.appendChild(pageDiv);
         }
         if(container.firstElementChild){ container.firstElementChild.scrollIntoView({behavior:'smooth'}); }
@@ -941,11 +949,13 @@
                 bodyHTML: page.querySelector('.cover-body')?.innerHTML||''
               });
             } else {
-              const bodyHTML = page.querySelector('.letter-body')?.innerHTML || page.innerHTML;
+              const bodyEl = page.querySelector('.letter-body');
+              const bodyHTML = bodyEl?.innerHTML || page.innerHTML;
               pages.push({
                 type:'letter',
                 bgUrl:getBgUrl(page.querySelector('.letter-bg')),
-                bodyHTML
+                bodyHTML,
+                noPadding: bodyEl?.classList.contains('workprog-body')
               });
             }
           });
@@ -1033,7 +1043,9 @@ body{ -webkit-text-size-adjust:100%; text-size-adjust:100%; }
           if(p.bgUrl) doc.write(`<img class="bg-img" src="${p.bgUrl}">`);
           if(p.photoUrl) doc.write(`<img class="bg-img" src="${p.photoUrl}">`);
           if(p.overlayUrl) doc.write(`<img class="bg-img" src="${p.overlayUrl}">`);
-          doc.write(`<div class="${p.type==='cover'?'cover-body':'body'}">${p.bodyHTML}</div>`);
+          const bodyCls = p.type==='cover'?'cover-body':'body';
+          const pad = p.noPadding ? ' style="padding:0"' : '';
+          doc.write(`<div class="${bodyCls}"${pad}>${p.bodyHTML}</div>`);
           doc.write('</div>');
         });
         doc.write('</body></html>');
