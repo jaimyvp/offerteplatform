@@ -1040,7 +1040,8 @@
         document.body.appendChild(iframe);
         const doc=iframe.contentDocument || iframe.contentWindow.document;
         doc.open();
-        doc.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>ACW-offerte</title>
+        const ref = (DRAFT.meta.ourRef || 'ACW-offerte').replace(/[^\w\d-]+/g,'_');
+        doc.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>${ref}</title>
           <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
           <style>
             @page { size: A4 portrait; margin: 0; }
@@ -1139,7 +1140,8 @@ async function exportPdfRaster(){
     if(i>0) pdf.addPage();
     pdf.addImage(img, 'JPEG', 0, 0, w, h);
   }
-  pdf.save('offerte.pdf');
+  const ref = (DRAFT.meta.ourRef || 'offerte').replace(/[^\w\d-]+/g,'_');
+  pdf.save(`${ref}.pdf`);
   stack.innerHTML = '';
 }
 
