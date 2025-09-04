@@ -1,0 +1,1251 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ACW Offerteplatform</title>
+  <!-- Inter overal; Rajdhani voor prijzen/headers/voorblad -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
+  <script defer src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.10.111/build/pdf.min.js"></script>
+  <style>
+    :root{ --acw-red:#D52B1E; --acw-black:#222222 }
+    *{ box-sizing:border-box }
+    body{ margin:0; font-family: 'Inter', system-ui, sans-serif; background:#f7f7f8; color:#111 }
+    header{ background:#222; color:#fff; border-bottom:4px solid var(--acw-red) }
+    .head{ display:flex; gap:12px; align-items:center; padding:12px 16px }
+    .head img{ height:36px }
+    .head h1{ margin:0; font-size:18px; font-weight:800 }
+
+    .container{ max-width:1060px; margin:18px auto; padding:0 14px }
+    .card{ background:#fff; border:1px solid #e5e7eb; border-radius:14px; box-shadow:0 2px 12px rgba(0,0,0,.05); padding:18px; margin-bottom:14px }
+    .title{ font-size:18px; font-weight:800; margin:0 0 8px }
+    .muted{ color:#6b7280; font-size:14px }
+    .row{ display:grid; grid-template-columns:1fr 1fr; gap:12px }
+    @media (max-width:760px){ .row{ grid-template-columns:1fr } }
+    label{ display:block; font-weight:700; margin:8px 0 4px }
+    input,select,textarea{ width:100%; padding:10px 12px; border:1px solid #e5e7eb; border-radius:10px; font-size:16px; background:#fff }
+    textarea{ resize:vertical }
+    .btn{ display:inline-flex; align-items:center; gap:8px; padding:10px 14px; border:none; cursor:pointer; font-weight:800; background:var(--acw-red); color:#fff; border-radius:12px }
+    .btn:disabled{ opacity:0.5; cursor:not-allowed }
+    .chips{ display:flex; flex-wrap:wrap; gap:8px }
+    .chip{ border:1px solid #e5e7eb; border-radius:999px; padding:6px 10px; cursor:pointer; user-select:none }
+    .chip.active{ border-color:var(--acw-red); color:var(--acw-red); font-weight:700 }
+    .hidden{ display:none }
+
+    /* Currency with € prefix */
+    .currency{ position:relative }
+    .currency .prefix{ position:absolute; left:10px; top:50%; transform:translateY(-50%); pointer-events:none; color:#111 }
+    .currency input{ padding-left:28px }
+
+    /* Papier / letter pagina's */
+    .letter{ width:210mm; min-height:297mm; background:#fff; margin:0 auto; position:relative; box-shadow:0 2px 12px rgba(0,0,0,.05); font-size:10pt; line-height:1.5 }
+    .letter-bg{ position:absolute; inset:0; background-size:cover; background-position:center; opacity:1 }
+    .letter-body{ position:relative; padding:28mm 22mm 24mm 22mm; font-size:10pt; line-height:1.5 }
+    .letter .meta{ margin:0 0 14px; font-size:10pt }
+    .signature{ margin-top:18px }
+    .signature img{ max-height:100px; display:block }
+
+    /* Prijzenoverzicht */
+    .pricesheet-body{ font-family:'Rajdhani', sans-serif; font-weight:500; font-size:10pt }
+    table.pricetable{ width:100%; border-collapse:separate; border-spacing:0; font-size:10pt; font-family:'Rajdhani', sans-serif }
+    table.pricetable th, table.pricetable td{ padding:8px 10px; border-bottom:1px solid #e5e7eb; text-align:left }
+    table.pricetable th{ background:var(--acw-red); color:#fff; font-weight:700 }
+    table.pricetable td.bold{ font-weight:700 }
+    table.pricetable tfoot td{ font-weight:700 }
+
+    /* Werkprogramma */
+    .workprog-body{ padding:0 }
+    .workprog-body table{ width:100%; border-collapse:collapse; }
+    .workprog-body td, .workprog-body th{ border:1px solid #e5e7eb; padding:4px; font-size:10pt }
+
+    /* Ruimtestaat */
+    .roomsheet-body{ padding:0 }
+    .roomsheet-body table{ width:100%; border-collapse:collapse; }
+    .roomsheet-body td, .roomsheet-body th{ border:1px solid #e5e7eb; padding:4px; font-size:10pt }
+
+    /* Toelichting */
+    .raj-title{ font-family:'Rajdhani', sans-serif; font-weight:700 }
+    .acw-ul{ list-style:none; padding-left:0; margin:8px 0 0 }
+    .acw-ul li{
+      position:relative;
+      padding-left:20px;
+      margin:6px 0;
+      font-size:10pt;
+    }
+    .acw-ul li::before{
+      content:"";
+      position:absolute;
+      left:0;
+      top:0.95em;
+      transform:translateY(-50%);
+      width:12px;
+      height:9px;
+      background:url("data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iMzAiIHZpZXdCb3g9IjAgMCA0MCAzMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiBhcmlhLWhpZGRlbj0idHJ1ZSI+PHBvbHlnb24gcG9pbnRzPSIwLDggNDAsMCA0MCwzMCAwLDMwIiBmaWxsPSIjZTMwNjEzIi8+PC9zdmc+") no-repeat center/contain;
+      -webkit-print-color-adjust:exact;
+      print-color-adjust:exact;
+    }
+
+    .note{ padding:10px 12px; background:#f3f4f6; border:1px solid #e5e7eb; border-radius:10px; font-size:14px }
+    .ok{ color:#065f46; background:#ecfdf5; border-color:#a7f3d0 }
+    .notes-input{ display:flex; gap:8px; align-items:center }
+    .note-add{ width:38px; height:38px; border-radius:10px; border:none; background:var(--acw-red); color:#fff; font-weight:800; font-size:20px; cursor:pointer; line-height:0 }
+    .notes-list{ margin-top:10px }
+    .notes-list .item{ display:flex; align-items:flex-start; gap:8px; margin:6px 0; font-size:10pt }
+    .notes-list .bullet{ width:12px; height:9px; background:url("data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iMzAiIHZpZXdCb3g9IjAgMCA0MCAzMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiBhcmlhLWhpZGRlbj0idHJ1ZSI+PHBvbHlnb24gcG9pbnRzPSIwLDggNDAsMCA0MCwzMCAwLDMwIiBmaWxsPSIjZTMwNjEzIi8+PC9zdmc+") no-repeat center/contain; margin-top:6px; flex-shrink:0 }
+    .notes-list .remove{ background:none; border:none; color:#b91c1c; font-size:18px; cursor:pointer; line-height:1 }
+
+    .spec-post{ border:1px solid #e5e7eb; border-radius:10px; padding:10px 12px; margin-bottom:10px; position:relative }
+    .spec-post .remove{ background:none; border:none; color:#b91c1c; font-size:18px; cursor:pointer; line-height:1; position:absolute; top:8px; right:8px }
+
+    /* Ondertekenen blok */
+    .sign-title{ margin-top:24px; margin-bottom:10px; font-size:10pt }
+    .sign-grid{ display:flex; gap:24px; align-items:flex-start }
+    .sign-grid > div{ flex:1 }
+    .sign-left img{ height:100px; display:block; margin-bottom:8px }
+    .sign-right{ margin-top:108px }
+    .sign-line{ border-top:2px solid #000; width:220px; margin-bottom:8px }
+    .sign-text{ font-size:10pt; line-height:1.3 }
+
+    /* Voorblad */
+    .cover-body{ font-family:'Rajdhani', sans-serif; color:#fff; font-size:10pt; font-weight:500 }
+    .cover-photo{ position:absolute; inset:0; background-size:cover; background-position:center }
+    .cover-overlay{ position:absolute; inset:0; background:url('https://www.acwbv.nl/wp-content/uploads/2025/08/Voorblad-template-v2.png') center/cover no-repeat }
+    /* Tekst exact in het rode vlak positioneren obv 1241x1756, x=45px, y=1120px (projectafspraak) */
+    .cover-text{ position:absolute; top:210mm; left:28mm; width:90mm; display:flex; justify-content:space-between; gap:1px; }
+    .cover-col{ width:48%; }
+    .cover-col p{ margin:3px 0 }
+    .cover-col .label{ font-weight:700 }
+
+    /* Export helper (onzichtbaar) */
+    .export-stack{ position:fixed; left:-99999px; top:-99999px; width:220mm }
+    .page-break{ page-break-after:always }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="head">
+      <img src="https://www.acwbv.nl/wp-content/uploads/2025/08/LOGO-ACW-RGB-SLOGAN-DIAP-OP-ZWART.png" alt="ACW logo">
+      <h1>Offerteplatform</h1>
+    </div>
+  </header>
+
+  <main class="container">
+    <!-- TYPE -->
+    <section class="card" id="typeSection">
+      <h2 class="title">Stap 0 – Kies offertetype</h2>
+      <div class="chips" id="typeChips">
+        <div class="chip" data-kind="regular_office">Reguliere schoonmaak kantoren</div>
+        <div class="chip" data-kind="regular_hoa">Reguliere schoonmaak VvE's</div>
+        <div class="chip" data-kind="specialist">Specialistische reiniging</div>
+        <div class="chip" data-kind="glass">Glasbewassing</div>
+      </div>
+      <p class="muted" id="typeLabel">Nog geen type gekozen.</p>
+      <div class="actions" style="margin-top:12px">
+        <button id="btnStart" class="btn" disabled>Start met invullen</button>
+      </div>
+    </section>
+
+    <!-- FORM PAGES WRAPPER -->
+    <section id="formPage" class="hidden">
+      <!-- BASIS -->
+      <section class="card" id="basisSection">
+        <h2 class="title">1) Basisgegevens</h2>
+        <h3 class="title" style="font-size:16px">Interne gegevens</h3>
+        <div class="row">
+          <div>
+            <label>Naam offertemaker *</label>
+            <select id="makerName">
+              <option value="" selected>Kies...</option>
+              <option value="Roger van den Donker" data-abbr="rd">Roger van den Donker (rd)</option>
+              <option value="Jaimy van Pelt" data-abbr="jvp">Jaimy van Pelt (jvp)</option>
+              <option value="Daniël van Pelt" data-abbr="dvp">Daniël van Pelt (dvp)</option>
+            </select>
+          </div>
+          <div>
+            <label>Afkorting offertemaker *</label>
+            <input id="makerAbbr" placeholder="rd / jvp / dvp" readonly>
+          </div>
+          <div>
+            <label>Offertenummer Nocore *</label>
+            <input id="nocoreNumber" placeholder="Bijv. 12345">
+          </div>
+        </div>
+
+        <h3 class="title" style="font-size:16px;margin-top:14px">NAW-gegevens klant</h3>
+        <div id="hoaMgmtRow" class="row hidden">
+          <div>
+            <label>Is de VvE in eigen of extern beheer?</label>
+            <select id="hoaMgmt">
+              <option value="">Kies...</option>
+              <option value="own">eigen beheer</option>
+              <option value="external">externe beheerder</option>
+            </select>
+          </div>
+        </div>
+        <div class="row" id="nawRow">
+          <div><label id="labelCompany">Naam bedrijf *</label><input id="companyName" placeholder="Bedrijfsnaam"></div>
+          <div id="managerField" class="hidden"><label id="labelManager">Naam beheerder *</label><input id="managerName"></div>
+          <div><label id="labelContactFull">Naam contactpersoon *</label><input id="contactFull" placeholder="Voornaam Achternaam"></div>
+          <div><label>Voornaam contactpersoon</label><input id="contactFirst" placeholder="Wordt automatisch bepaald" readonly></div>
+          <div><label id="labelStreet">Straat + huisnummer *</label><input id="street" placeholder="Straat 1"></div>
+          <div><label id="labelPostalCity">Postcode + plaats *</label><input id="postalCity" placeholder="1234 AB, Plaats"></div>
+        </div>
+
+        <h3 class="title" style="font-size:16px;margin-top:14px">Gegevens voorbrief</h3>
+        <div class="row">
+          <div>
+            <label>Datum *</label>
+            <input id="letterDate" type="date">
+          </div>
+          <div>
+            <label>Onze referentie</label>
+            <input id="ourRef" placeholder="Wordt automatisch gegenereerd" readonly>
+            <div class="muted">Formaat: &lt;bedrijf&gt;-acw-&lt;afkorting&gt;-&lt;nocore nr&gt;</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- VOORBRIEF INVOER -->
+      <section class="card" id="voorbriefSection">
+        <h2 class="title">2) Voorbrief – invoer</h2>
+        <label>Betreft *</label>
+        <input id="letterSubject" placeholder="Bijv. Offerte reguliere schoonmaak">
+        <label>Inhoud *</label>
+        <textarea id="letterBody" rows="8" placeholder="Schrijf hier de inhoud van de brief..."></textarea>
+        <div class="actions" style="margin-top:10px"><button id="btnUpdatePreview" class="btn">Voorbeeld bijwerken</button></div>
+      </section>
+
+      <!-- VOORBRIEF PREVIEW -->
+      <section class="card" id="letterSection">
+        <h2 class="title">3) Voorbeeld voorbrief</h2>
+        <div class="letter"><div class="letter-bg" id="letterBg"></div><div class="letter-body" id="letterContent"></div></div>
+        <div class="actions" style="margin-top:10px"><button id="btnApproveLetter" class="btn">Goedkeuren en doorgaan</button></div>
+        <div id="approveNote" class="note ok hidden">Voorbrief is goedgekeurd. Je kunt doorgaan naar de volgende stap.</div>
+      </section>
+
+      <!-- PRIJZEN INVOER -->
+      <section class="card" id="pricingSection">
+        <h2 class="title">4) Prijzen – invoer</h2>
+        <p class="muted" id="pricingIntro">Type: <span id="pricingType">-</span></p>
+        <div id="pricingFields" class="row"></div>
+        <div class="actions" style="margin-top:10px"><button id="btnUpdatePricePreview" class="btn">Voorbeeld bijwerken</button></div>
+      </section>
+
+      <!-- PRIJZENOVERZICHT PREVIEW -->
+      <section class="card" id="pricesheetSection">
+        <h2 class="title">5) Prijzenoverzicht – voorbeeld</h2>
+        <div class="letter"><div class="letter-bg" id="priceBg"></div><div class="letter-body pricesheet-body" id="priceContent"></div></div>
+      </section>
+
+      <!-- WERKPROGRAMMA -->
+      <section class="card" id="workprogramSection">
+        <h2 class="title">6) Werkprogramma</h2>
+        <p>Wil je een werkprogramma invoegen?</p>
+        <div class="chips" id="workprogChoice">
+          <div class="chip" data-choice="yes">Ja</div>
+          <div class="chip" data-choice="no">Nee</div>
+        </div>
+        <div id="workprogUpload" class="hidden" style="margin-top:10px">
+          <input type="file" id="workprogFile" accept=".pdf" />
+          <div class="actions" style="margin-top:10px"><button id="btnWorkprogPreview" class="btn">Voorbeeld bijwerken</button></div>
+        </div>
+        <div id="workprogPreview"></div>
+      </section>
+
+      <!-- RUIMTESTAAT -->
+      <section class="card" id="roomsheetSection">
+        <h2 class="title">7) Ruimtestaat</h2>
+        <p>Wil je een ruimtestaat invoegen?</p>
+        <div class="chips" id="roomsheetChoice">
+          <div class="chip" data-choice="yes">Ja</div>
+          <div class="chip" data-choice="no">Nee</div>
+        </div>
+        <div id="roomsheetUpload" class="hidden" style="margin-top:10px">
+          <input type="file" id="roomsheetFile" accept=".pdf" />
+          <div class="actions" style="margin-top:10px"><button id="btnRoomsPreview" class="btn">Voorbeeld bijwerken</button></div>
+        </div>
+        <div id="roomsheetPreview"></div>
+      </section>
+
+      <!-- TOELICHTING INVOER -->
+      <section class="card" id="notesInputSection">
+        <h2 class="title">8) Aandachtspunten/toelichting – invoer</h2>
+        <p class="muted">Voeg hier eventuele <strong>Bijzonderheden</strong> toe. Laat leeg als er geen bijzonderheden zijn.</p>
+        <div class="notes-input">
+          <input id="noteInput" placeholder="Bijzonderheid toevoegen..." />
+          <button id="addNote" class="note-add" title="Toevoegen">+</button>
+        </div>
+        <div id="notesList" class="notes-list"></div>
+        <div class="actions" style="margin-top:10px"><button id="btnUpdateNotesPreview" class="btn">Voorbeeld bijwerken</button></div>
+      </section>
+
+      <!-- TOELICHTING PREVIEW -->
+      <section class="card" id="notesPreviewSection">
+        <h2 class="title">9) Aandachtspunten/toelichting – voorbeeld</h2>
+        <div class="letter"><div class="letter-bg" id="notesBg"></div><div class="letter-body" id="notesContent"></div></div>
+      </section>
+
+      <!-- VOORBLAD INVOER -->
+      <section class="card" id="coverInputSection">
+        <h2 class="title">10) Voorblad – invoer</h2>
+        <div class="row">
+          <div>
+            <label>Beknopte samenvatting *</label>
+            <input id="coverSummary" placeholder="Bijv. Voorstel reguliere schoonmaak diensten">
+          </div>
+          <div>
+            <label>Afbeelding *</label>
+            <select id="coverImageChoice">
+              <option value="standard">Standaard afbeelding</option>
+              <option value="custom">Eigen afbeelding uploaden</option>
+            </select>
+            <input type="file" id="coverImageUpload" class="hidden" accept="image/*">
+          </div>
+        </div>
+        <div class="actions" style="margin-top:10px"><button id="btnUpdateCoverPreview" class="btn">Voorbeeld bijwerken</button></div>
+      </section>
+
+      <!-- VOORBLAD PREVIEW -->
+      <section class="card" id="coverPreviewSection">
+        <h2 class="title">11) Voorblad – voorbeeld</h2>
+        <div class="letter">
+          <div class="letter-bg cover-photo" id="coverBg"></div>
+          <div class="cover-overlay"></div>
+          <div class="cover-body">
+            <div class="cover-text">
+            <div class="cover-col" id="coverLeft" data-print-lock="left"></div>
+            <div class="cover-col" id="coverRight" data-print-lock="right"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- EXPORT -->
+      <section class="card" id="exportSection">
+        <h2 class="title">12) Exporteren</h2>
+        <p class="muted">Exporteer alles naar <strong>één PDF</strong> in de volgorde: Voorblad → Voorbrief → Prijzenoverzicht → Werkprogramma → Ruimtestaat → Toelichting</p>
+        <button class="btn" id="btnExportPdf">Exporteren als PDF</button>
+        <button class="btn" id="btnPrintPdf" style="margin-left:8px">Printen als PDF</button>
+        <div id="exportToast" class="note ok hidden" style="margin-top:10px">PDF wordt gegenereerd…</div>
+      </section>
+
+      <!-- DIAGNOSE / TESTS -->
+      <section class="card" id="diagnoseSection">
+        <h2 class="title">Diagnose (zelftest)</h2>
+        <button class="btn" id="btnSelfTest">Zelftest uitvoeren</button>
+        <div id="selfTestOut" class="muted" style="margin-top:8px"></div>
+      </section>
+
+    </section>
+
+    <!-- Verborgen container voor export -->
+    <div id="exportStack" class="export-stack"></div>
+  </main>
+
+  <!-- PROBEER CDN LADEN (non-blocking); als dit faalt, gebruiken we print-fallback -->
+  <script>
+    function loadScript(src){
+      return new Promise((resolve,reject)=>{
+        const s=document.createElement('script');
+        s.src=src; s.async=true; s.onload=()=>resolve(true); s.onerror=()=>reject(new Error('load failed:'+src));
+        document.head.appendChild(s);
+      });
+    }
+    async function ensureHtml2Pdf(){
+      if(window.html2pdf) return true;
+      const cdns=[
+        'https://cdn.jsdelivr.net/npm/html2pdf.js@0.10.1/dist/html2pdf.bundle.min.js',
+        'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js'
+      ];
+      for(const url of cdns){
+        try{ await loadScript(url); if(window.html2pdf) return true; }catch(e){ /* try next */ }
+      }
+      return !!window.html2pdf;
+    }
+  </script>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function(){
+      pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.10.111/build/pdf.worker.min.js';
+      const el=id=>document.getElementById(id);
+      const labels={regular_office:'Reguliere schoonmaak kantoren', regular_hoa:"Reguliere schoonmaak VvE's", specialist:'Specialistische reiniging', glass:'Glasbewassing'};
+      const DRAFT=window.DRAFT||{ kind:null, meta:{}, pricing:{}, notes:[] }; window.DRAFT=DRAFT;
+
+      const params=new URLSearchParams(location.search);
+      let draftId=params.get('id');
+      if(draftId){
+        const stored=localStorage.getItem('offerte:'+draftId);
+        if(stored){
+          try{ Object.assign(DRAFT, JSON.parse(stored)); }catch(e){}
+        }
+        DRAFT.id=draftId;
+      }else{
+        DRAFT.id=Date.now().toString(36);
+      }
+
+      function saveDraft(){
+        DRAFT.updated=Date.now();
+        localStorage.setItem('offerte:'+DRAFT.id, JSON.stringify(DRAFT));
+      }
+      let saveTimer;
+      function scheduleSave(){
+        clearTimeout(saveTimer);
+        saveTimer=setTimeout(saveDraft,500);
+      }
+      document.addEventListener('input', scheduleSave, true);
+      document.addEventListener('change', scheduleSave, true);
+      window.addEventListener('beforeunload', saveDraft);
+
+      // Utils
+      const euro=n=>`€ ${Number(n||0).toLocaleString('nl-NL',{minimumFractionDigits:2, maximumFractionDigits:2})}`;
+      const formatDateDMY=iso=>{ if(!iso) return ''; const [y,m,d]=iso.split('-'); return `${d}-${m}-${y}`; };
+      const deriveFirstName=full=>{ const t=(full||'').trim(); const idx=t.indexOf(' '); return idx>-1?t.slice(0,idx):t; };
+      const esc=s=>(s||'').replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
+      const nl2br=s=>esc(s).replace(/\n/g,'<br>');
+      const getBgUrl=(el)=>{ if(!el) return ''; const bi=getComputedStyle(el).backgroundImage; const m=/url\(["']?(.*?)["']?\)/.exec(bi||''); return m?m[1]:''; };
+
+      // TYPE chips
+      document.querySelectorAll('#typeChips .chip').forEach(ch=>ch.addEventListener('click',()=>{
+        document.querySelectorAll('#typeChips .chip').forEach(x=>x.classList.remove('active'));
+        ch.classList.add('active');
+        DRAFT.kind=ch.getAttribute('data-kind');
+        el('typeLabel').textContent=`Gekozen: ${labels[DRAFT.kind]||''}`;
+        el('btnStart').disabled=false;
+      }));
+
+      // Start flow
+      el('btnStart').addEventListener('click',()=>{
+        if(!DRAFT.kind){ alert('Kies eerst een offertetype.'); return; }
+        el('typeSection').classList.add('hidden');
+        el('formPage').classList.remove('hidden');
+        el('pricingType').textContent=labels[DRAFT.kind]||'-';
+        renderPricingFields();
+        const today=new Date();
+        const iso=new Date(today.getTime()-today.getTimezoneOffset()*60000).toISOString().slice(0,10);
+        el('letterDate').value=iso; DRAFT.meta.letterDate=iso;
+        renderNawForm();
+      });
+
+      // Basis events
+      el('makerName').addEventListener('change',e=>{const abbr=e.target.selectedOptions[0]?.getAttribute('data-abbr')||''; el('makerAbbr').value=abbr; DRAFT.meta.makerName=e.target.value; DRAFT.meta.makerAbbr=abbr; updateRef();});
+      el('nocoreNumber').addEventListener('input',()=>{DRAFT.meta.nocoreNumber=el('nocoreNumber').value; updateRef();});
+      el('companyName').addEventListener('input',()=>{DRAFT.meta.companyName=el('companyName').value; updateRef();});
+      el('managerName').addEventListener('input',()=>{DRAFT.meta.managerName=el('managerName').value;});
+      el('contactFull').addEventListener('input',()=>{DRAFT.meta.contactFull=el('contactFull').value; DRAFT.meta.contactFirst=deriveFirstName(DRAFT.meta.contactFull); el('contactFirst').value=DRAFT.meta.contactFirst;});
+      el('street').addEventListener('input',()=>{DRAFT.meta.street=el('street').value;});
+      el('postalCity').addEventListener('input',()=>{DRAFT.meta.postalCity=el('postalCity').value;});
+      el('letterDate').addEventListener('input',()=>{DRAFT.meta.letterDate=el('letterDate').value;});
+      el('hoaMgmt').addEventListener('change',()=>{DRAFT.meta.hoaMgmt=el('hoaMgmt').value; renderNawForm();});
+      function updateRef(){ const m=DRAFT.meta; const c=m.companyName?.trim(); const a=m.makerAbbr?.trim(); const n=m.nocoreNumber?.trim(); el('ourRef').value=(c&&a&&n)?`${c}-acw-${a}-${n}`:''; m.ourRef=el('ourRef').value; }
+      function renderNawForm(){
+        const isHoa=DRAFT.kind==='regular_hoa';
+        el('hoaMgmtRow').classList.toggle('hidden', !isHoa);
+        const mgmt=DRAFT.meta.hoaMgmt||'';
+        el('nawRow').classList.toggle('hidden', isHoa && !mgmt);
+        const lblCompany=el('labelCompany'), lblContact=el('labelContactFull'), lblStreet=el('labelStreet'), lblPostal=el('labelPostalCity'), managerField=el('managerField');
+        if(!isHoa){
+          managerField.classList.add('hidden');
+          lblCompany.textContent='Naam bedrijf';
+          lblContact.textContent='Naam contactpersoon';
+          lblStreet.textContent='Straat + huisnummer';
+          lblPostal.textContent='Postcode + plaats';
+        } else if(mgmt==='external'){
+          managerField.classList.remove('hidden');
+          lblCompany.textContent='Naam VvE';
+          lblContact.textContent='Naam contactpersoon';
+          lblStreet.textContent='Straat + huisnummer beheerder';
+          lblPostal.textContent='Postcode + plaats';
+        } else {
+          managerField.classList.add('hidden');
+          lblCompany.textContent='Naam VvE';
+          lblContact.textContent='Naam contactpersoon';
+          lblStreet.textContent='Straat + huisnummers VvE';
+          lblPostal.textContent='Postcode + plaats';
+        }
+      }
+
+      // Voorbrief preview
+      el('btnUpdatePreview').addEventListener('click',()=>{
+        const m=DRAFT.meta, subject=el('letterSubject').value, body=el('letterBody').value;
+        const roles={ 'Jaimy van Pelt':'Sales & Bedrijfsbureau','Daniël van Pelt':'Directeur','Roger van den Donker':'Directeur' };
+        const sigs={ rd:'https://www.acwbv.nl/wp-content/uploads/2025/08/handtekening-roger.png', jvp:'https://www.acwbv.nl/wp-content/uploads/2025/08/handtekening-jaimy.png', dvp:'https://www.acwbv.nl/wp-content/uploads/2025/08/handtekening-daniel.png' };
+        const sig=sigs[m.makerAbbr]||''; const role=roles[m.makerName]||'';
+
+        let html='';
+        html+=`<div class=\"meta\" style=\"text-align:right; margin-top:10px\">Datum: ${formatDateDMY(m.letterDate||'')}</div><br>`;
+        let headerLines=[];
+        if(DRAFT.kind==='regular_hoa' && m.hoaMgmt==='external'){
+          headerLines.push(`<strong>${esc(m.companyName||'')}</strong>`);
+          headerLines.push(`<strong>P/a ${esc(m.managerName||'')}</strong>`);
+          headerLines.push(`<strong>T.a.v. ${esc(m.contactFull||'')}</strong>`);
+          headerLines.push(`<strong>${esc(m.street||'')}</strong>`);
+          headerLines.push(`<strong>${esc(m.postalCity||'')}</strong>`);
+        } else {
+          headerLines.push(`<strong>${esc(m.companyName||'')}</strong>`);
+          headerLines.push(`<strong>T.a.v. ${esc(m.contactFull||'')}</strong>`);
+          headerLines.push(`<strong>${esc(m.street||'')}</strong>`);
+          headerLines.push(`<strong>${esc(m.postalCity||'')}</strong>`);
+        }
+        html+=headerLines.join('<br>')+'<br><br>';
+        html+=`<em>Onze referentie: ${esc(m.ourRef||'')}</em><br><em>Betreft: ${esc(subject||'')}</em><br><br>`;
+        html+=`Beste ${esc(m.contactFirst||'')},<br><br>${nl2br(body||'')}<br><br>`;
+        html+=`<div class=\"signature\">Met vriendelijke groet,<br><br>${sig?`<img src=\"${sig}\" style=\"height:100px\" alt=\"Handtekening\"><br>`:''}ACW<br>${esc(m.makerName||'')}<br><em>${esc(role)}</em></div>`;
+
+        el('letterContent').innerHTML=html;
+        el('letterBg').style.backgroundImage="url('https://www.acwbv.nl/wp-content/uploads/2025/08/Briefpapier-overige-pagina-1.jpg')";
+        document.getElementById('letterSection').scrollIntoView({behavior:'smooth'});
+      });
+      el('btnApproveLetter').addEventListener('click',()=>{ el('approveNote').classList.remove('hidden'); document.getElementById('pricingSection').scrollIntoView({behavior:'smooth'}); });
+
+      // Pricing fields
+      function renderPricingFields(){
+        const wrap=el('pricingFields'); wrap.innerHTML='';
+        const parseDec=v=> Number(String(v).replace(/\./g,'').replace(',','.'));
+
+        if(DRAFT.kind==='specialist'){
+          wrap.className='';
+          if(!Array.isArray(DRAFT.pricing.posts)) DRAFT.pricing.posts=[{price:0,freq:'once',turns:0,desc:''}];
+
+          function renderPosts(){
+            wrap.innerHTML='';
+            DRAFT.pricing.posts.forEach((post,idx)=>{
+              const block=document.createElement('div');
+              block.className='spec-post';
+              block.innerHTML=`<div style=\"font-weight:700;margin-bottom:6px\">Post ${idx+1}</div>
+              <div><label>Omschrijving</label><input data-field=\"desc\" placeholder=\"Bijv. tapijtreiniging\" value=\"${esc(post.desc||'')}\"></div>
+              <div class=\"row\">
+                <div class=\"currency\"><label>Prijs per beurt *</label><span class=\"prefix\">€</span><input data-field=\"price\" inputmode=\"decimal\" placeholder=\"0,00\" value=\"${post.price?post.price.toString().replace('.',','):''}\"></div>
+                <div><label>Frequentie *</label><select data-field=\"freq\"><option value=\"\">Kies...</option><option value=\"once\"${post.freq==='once'? ' selected':''}>Éénmalig</option><option value=\"multi\"${post.freq==='multi'? ' selected':''}>Meerdere keren</option></select></div>
+                <div class=\"turns ${post.freq==='multi'?'':'hidden'}\"><label>Beurten per jaar *</label><input type=\"number\" min=\"1\" step=\"1\" data-field=\"turns\" value=\"${post.turns||''}\"></div>
+                <div class=\"currency yearly\"><label>Prijs per jaar/Totale prijs</label><span class=\"prefix\">€</span><input data-field=\"yearly\" readonly value=\"${post.freq==='multi'?euro((post.price||0)*(post.turns||0)):post.price?euro(post.price):''}\"></div>
+              </div>
+              <button class=\"remove\" title=\"Verwijderen\">&times;</button>`;
+
+              const price=block.querySelector('[data-field=price]');
+              const freq=block.querySelector('[data-field=freq]');
+              const turns=block.querySelector('[data-field=turns]');
+              const yearly=block.querySelector('[data-field=yearly]');
+              const desc=block.querySelector('[data-field=desc]');
+              function sync(){
+                post.price=parseDec(price.value||0)||0;
+                post.freq=freq.value||'';
+                post.desc=desc.value||'';
+                if(post.freq==='multi'){
+                  post.turns=Number(turns.value||0);
+                  const y=(post.price||0)*(post.turns||0);
+                  post.yearly=y; yearly.value=euro(y);
+                }else{
+                  post.turns=0; if(turns) turns.value='';
+                  const y=(post.price||0);
+                  post.yearly=y; yearly.value=post.price?euro(y):'';
+                }
+              }
+              price.addEventListener('input',sync);
+              freq.addEventListener('change',()=>{
+                block.querySelector('.turns').classList.toggle('hidden',freq.value!=='multi');
+                sync();
+              });
+              desc.addEventListener('input',sync);
+              turns && turns.addEventListener('input',sync);
+              block.querySelector('.remove').addEventListener('click',()=>{ DRAFT.pricing.posts.splice(idx,1); renderPosts(); });
+              wrap.appendChild(block);
+            });
+            const addBtn=document.createElement('button');
+            addBtn.className='note-add'; addBtn.textContent='+'; addBtn.title='Post toevoegen';
+            addBtn.addEventListener('click',()=>{ DRAFT.pricing.posts.push({price:0,freq:'once',turns:0,desc:''}); renderPosts(); });
+            wrap.appendChild(addBtn);
+          }
+
+          renderPosts();
+          return;
+        }
+
+        if(DRAFT.kind==='regular_office'||DRAFT.kind==='regular_hoa'){
+          wrap.className='';
+          if(!Array.isArray(DRAFT.pricing.posts)) DRAFT.pricing.posts=[{type:'',desc:'',price:0,billing:'',highFreq:'',yearly:0,sp_price:0,sp_freq:'once',sp_turns:0,sp_yearly:0}];
+
+          function renderRegPosts(){
+            wrap.innerHTML='';
+            DRAFT.pricing.posts.forEach((post,idx)=>{
+              const block=document.createElement('div');
+              block.className='spec-post';
+              block.innerHTML=`<div style=\"font-weight:700;margin-bottom:6px\">Post ${idx+1}</div>
+              <div><label>Frequentie</label><select data-field=\"type\"><option value=\"\">Kies...</option><option value=\"regular\"${post.type==='regular'?' selected':''}>Regulier</option><option value=\"once\"${post.type==='once'?' selected':''}>Éénmalig</option></select></div>
+              <div class=\"desc-field ${post.type?'':'hidden'}\"><label>Omschrijving</label><input data-field=\"desc\" value=\"${esc(post.desc||'')}\"></div>
+              <div class=\"regular-fields ${post.type==='regular'?'':'hidden'}\"><div class=\"row\">
+                <div class=\"currency\"><label>Prijs *</label><span class=\"prefix\">€</span><input data-field=\"price\" inputmode=\"decimal\" placeholder=\"0,00\" value=\"${post.price?post.price.toString().replace('.',','):''}\"></div>
+                <div><label>Facturatieschema *</label><select data-field=\"billing\"><option value=\"\">Kies...</option><option value=\"maand\"${post.billing==='maand'?' selected':''}>Per maand</option><option value=\"4w\"${post.billing==='4w'?' selected':''}>Per periode (4 weken)</option></select></div>
+                <div><label>Hoogste frequentie *</label><select data-field=\"highFreq\"><option value=\"\">Kies...</option><option>5x per week</option><option>4x per week</option><option>3x per week</option><option>2x per week</option><option>1x per week</option><option>1x per maand</option><option>6x per jaar</option><option>4x per jaar</option><option>1x per jaar</option></select></div>
+                <div class=\"currency yearly\"><label>Prijs per jaar/Totale prijs</label><span class=\"prefix\">€</span><input data-field=\"yearly\" readonly value=\"${post.yearly?euro(post.yearly):''}\"></div>
+              </div></div>
+              <div class=\"once-fields ${post.type==='once'?'':'hidden'}\"><div class=\"row\">
+                <div class=\"currency\"><label>Prijs per beurt *</label><span class=\"prefix\">€</span><input data-field=\"sp_price\" inputmode=\"decimal\" placeholder=\"0,00\" value=\"${post.sp_price?post.sp_price.toString().replace('.',','):''}\"></div>
+                <div><label>Frequentie *</label><select data-field=\"sp_freq\"><option value=\"\">Kies...</option><option value=\"once\"${post.sp_freq==='once'?' selected':''}>Éénmalig</option><option value=\"multi\"${post.sp_freq==='multi'?' selected':''}>Meerdere keren</option></select></div>
+                <div class=\"turns ${post.sp_freq==='multi'?'':'hidden'}\"><label>Beurten per jaar *</label><input type=\"number\" min=\"1\" step=\"1\" data-field=\"sp_turns\" value=\"${post.sp_turns||''}\"></div>
+                <div class=\"currency yearly\"><label>Prijs per jaar/Totale prijs</label><span class=\"prefix\">€</span><input data-field=\"sp_yearly\" readonly value=\"${post.sp_freq==='multi'?euro((post.sp_price||0)*(post.sp_turns||0)):post.sp_price?euro(post.sp_price):''}\"></div>
+              </div></div>
+              <button class=\"remove\" title=\"Verwijderen\">&times;</button>`;
+
+              const desc=block.querySelector('[data-field=desc]');
+              const type=block.querySelector('[data-field=type]');
+              const price=block.querySelector('[data-field=price]');
+              const billing=block.querySelector('[data-field=billing]');
+              const highFreq=block.querySelector('[data-field=highFreq]');
+              const sp_price=block.querySelector('[data-field=sp_price]');
+              const sp_freq=block.querySelector('[data-field=sp_freq]');
+              const sp_turns=block.querySelector('[data-field=sp_turns]');
+              const sp_yearly=block.querySelector('[data-field=sp_yearly]');
+              const yearly=block.querySelector('[data-field=yearly]');
+
+              function sync(){
+                  post.desc=desc.value||'';
+                  post.type=type.value||'';
+                if(post.type==='regular'){
+                  post.price=parseDec(price.value||0)||0;
+                  post.billing=billing.value||'';
+                  post.highFreq=highFreq.value||'';
+                  const mult=post.billing==='4w'?13:post.billing==='maand'?12:0;
+                  const y=(post.price||0)*mult;
+                  post.yearly=y; if(yearly) yearly.value=y?euro(y):'';
+                }else if(post.type==='once'){
+                  post.yearly=0; if(yearly) yearly.value='';
+                  post.sp_price=parseDec(sp_price.value||0)||0;
+                  post.sp_freq=sp_freq.value||'';
+                  if(post.sp_freq==='multi'){
+                    post.sp_turns=Number(sp_turns.value||0);
+                    const y=(post.sp_price||0)*(post.sp_turns||0);
+                    post.sp_yearly=y; sp_yearly.value=euro(y);
+                  }else{
+                    post.sp_turns=0; if(sp_turns) sp_turns.value='';
+                    const y=(post.sp_price||0);
+                    post.sp_yearly=y; sp_yearly.value=post.sp_price?euro(y):'';
+                  }
+                }else{
+                  post.price=0; post.billing=''; post.highFreq='';
+                  post.yearly=0; if(yearly) yearly.value='';
+                  post.sp_price=0; post.sp_freq='once'; post.sp_turns=0; post.sp_yearly=0;
+                }
+              }
+
+              desc.addEventListener('input',sync);
+              type.addEventListener('change',()=>{
+                block.querySelector('.regular-fields').classList.toggle('hidden',type.value!=='regular');
+                block.querySelector('.once-fields').classList.toggle('hidden',type.value!=='once');
+                block.querySelector('.desc-field').classList.toggle('hidden',!type.value);
+                sync();
+              });
+              price && price.addEventListener('input',sync);
+              billing && billing.addEventListener('change',sync);
+              highFreq && highFreq.addEventListener('change',sync);
+              sp_price && sp_price.addEventListener('input',sync);
+              sp_freq && sp_freq.addEventListener('change',()=>{
+                block.querySelector('.turns').classList.toggle('hidden',sp_freq.value!=='multi');
+                sync();
+              });
+              sp_turns && sp_turns.addEventListener('input',sync);
+              sync();
+              block.querySelector('.remove').addEventListener('click',()=>{ DRAFT.pricing.posts.splice(idx,1); renderRegPosts(); });
+              wrap.appendChild(block);
+            });
+            const addBtn=document.createElement('button');
+            addBtn.className='note-add'; addBtn.textContent='+'; addBtn.title='Post toevoegen';
+            addBtn.addEventListener('click',()=>{ DRAFT.pricing.posts.push({type:'',desc:'',price:0,billing:'',highFreq:'',yearly:0,sp_price:0,sp_freq:'once',sp_turns:0,sp_yearly:0}); renderRegPosts(); });
+            wrap.appendChild(addBtn);
+          }
+
+          renderRegPosts();
+          return;
+        }
+
+        wrap.className='row';
+        let html='';
+        if(DRAFT.kind==='glass'){
+          html+=`<div class=\"currency\"><label>Prijs (per beurt) *</label><span class=\"prefix\">€</span><input id=\"price\" inputmode=\"decimal\" placeholder=\"0,00\"></div>`;
+          html+=`<div><label>Frequentie (per jaar) *</label><input id=\"freq\" type=\"number\" min=\"1\" step=\"1\" placeholder=\"Bijv. 4\"></div>`;
+          html+=`<div><label>Prijs per jaar</label><input id=\"yearly\" readonly></div>`;
+        }
+        wrap.innerHTML=html;
+
+        const price=el('price'), freq=el('freq'), yearly=el('yearly');
+        function sync(){
+          if(price) DRAFT.pricing.price = parseDec(price.value||0) || 0;
+          if(freq) DRAFT.pricing.frequency = Number(freq.value||0);
+          if(yearly && DRAFT.kind==='glass'){
+            const y=(DRAFT.pricing.price||0)*(DRAFT.pricing.frequency||0);
+            yearly.value=euro(y); DRAFT.pricing.yearly=y;
+          }
+        }
+        price && price.addEventListener('input',sync);
+        freq && freq.addEventListener('input',sync);
+        sync();
+      }
+
+      // Prijzenoverzicht preview
+      el('btnUpdatePricePreview').addEventListener('click',()=>{
+        if(!DRAFT.kind){ alert('Kies eerst een offertetype.'); return; }
+        if(DRAFT.kind==='regular_office'||DRAFT.kind==='regular_hoa'){
+          const posts=DRAFT.pricing.posts||[];
+          if(!posts.length){ alert('Voeg minimaal één post toe.'); return; }
+          for(const post of posts){
+            if(!post.type){ alert('Kies een frequentie voor elke post.'); return; }
+            if(post.type==='regular'){
+              if(!(post.price>0)){ alert('Vul een geldige prijs in.'); return; }
+              if(!post.billing){ alert('Kies een facturatieschema.'); return; }
+              if(!post.highFreq){ alert('Kies de hoogste frequentie.'); return; }
+            }else{
+              if(!(post.sp_price>0)){ alert('Vul een geldige prijs per beurt in.'); return; }
+              if(!post.sp_freq){ alert('Kies een frequentie.'); return; }
+              if(post.sp_freq==='multi' && !(post.sp_turns>0)){ alert('Vul geldige beurten per jaar in.'); return; }
+            }
+          }
+        }
+        if(DRAFT.kind==='specialist'){
+          const posts=DRAFT.pricing.posts||[];
+          if(!posts.length){ alert('Voeg minimaal één post toe.'); return; }
+          for(const post of posts){
+            if(!(post.price>0)){ alert('Vul een geldige prijs per beurt in.'); return; }
+            if(post.freq==='multi' && !(post.turns>0)){ alert('Vul geldige beurten per jaar in.'); return; }
+          }
+        }
+        if(DRAFT.kind==='glass'){
+          if(!(DRAFT.pricing.price>0)){ alert('Vul een geldige prijs in.'); return; }
+          if(!(DRAFT.pricing.frequency>0)){ alert('Vul een geldige frequentie per jaar in.'); return; }
+        }
+
+        const m=DRAFT.meta, p=DRAFT.pricing; let html='';
+        html+=`<div class=\"meta\" style=\"text-align:right; margin-top:10px\">Datum: ${formatDateDMY(m.letterDate||'')}</div><br>`;
+        html+=`<strong>${esc(m.companyName||'')}</strong><br><strong>T.a.v. ${esc(m.contactFull||'')}</strong><br><strong>${esc(m.street||'')}</strong><br><strong>${esc(m.postalCity||'')}</strong><br><br>`;
+        html+=`<h1 class=\"raj-title\" style=\"font-size:16pt; margin:0 0 10px\">Prijzenoverzicht</h1>`;
+        html+=`<table class=\"pricetable\">`;
+
+        if(DRAFT.kind==='specialist'){
+          html+=`<thead><tr><th>Post</th><th>Prijs per beurt</th><th>Frequentie</th><th>Prijs per jaar/Totale prijs</th></tr></thead><tbody>`;
+          let total=0;
+          p.posts.forEach((post,idx)=>{
+            const freqText=post.freq==='multi'?`${post.turns}x per jaar`:'Éénmalig';
+            const yearly=post.freq==='multi'? (post.price||0)*(post.turns||0) : (post.price||0);
+            if(yearly>0) total+=yearly;
+            const label=post.desc?`Post ${idx+1}: ${esc(post.desc)}`:`Post ${idx+1}`;
+            html+=`<tr><td class=\"bold\">${label}</td><td class=\"bold\">${euro(post.price)}</td><td>${esc(freqText)}</td><td>${yearly?euro(yearly):'-'}</td></tr>`;
+          });
+          html+=`</tbody>`;
+          if(total>0) html+=`<tfoot><tr><td colspan=\"3\">Totaal per jaar/Totale prijs</td><td>${euro(total)}</td></tr></tfoot>`;
+        } else if(DRAFT.kind==='regular_office'||DRAFT.kind==='regular_hoa'){
+          html+=`<thead><tr><th>Post</th><th>Prijs</th><th>Frequentie</th><th>Prijs per jaar/Totale prijs</th></tr></thead><tbody>`;
+          let total=0;
+          p.posts.forEach((post,idx)=>{
+            if(post.type==='regular'){
+              const priceLabel = post.billing==='maand'? 'p/m' : 'p/4w';
+              const yearly = post.billing==='4w' ? (post.price||0)*13 : post.billing==='maand' ? (post.price||0)*12 : 0;
+              if(yearly>0) total+=yearly;
+              const label=post.desc?`Post ${idx+1}: ${esc(post.desc)}`:`Post ${idx+1}`;
+              html+=`<tr><td class=\"bold\">${label}</td><td class=\"bold\">${euro(post.price)} ${priceLabel}</td><td>${esc(post.highFreq)}</td><td>${yearly?euro(yearly):'-'}</td></tr>`;
+            }else if(post.type==='once'){
+              const freqText=post.sp_freq==='multi'?`${post.sp_turns}x per jaar`:'Éénmalig';
+              const yearly=post.sp_freq==='multi'? (post.sp_price||0)*(post.sp_turns||0) : (post.sp_price||0);
+              if(yearly>0) total+=yearly;
+              const label=post.desc?`Post ${idx+1}: ${esc(post.desc)}`:`Post ${idx+1}`;
+              html+=`<tr><td class=\"bold\">${label}</td><td class=\"bold\">${euro(post.sp_price)}</td><td>${esc(freqText)}</td><td>${yearly?euro(yearly):'-'}</td></tr>`;
+            }
+          });
+          html+=`</tbody>`;
+          if(total>0) html+=`<tfoot><tr><td colspan=\"3\">Totaal per jaar/Totale prijs</td><td>${euro(total)}</td></tr></tfoot>`;
+        } else if(DRAFT.kind==='glass'){
+          const rows=[];
+          rows.push(['Frequentie (per jaar)', p.frequency]);
+          rows.push(['Prijs per beurt', euro(p.price)]);
+          rows.push(['Prijs per jaar', euro((p.price||0)*(p.frequency||0))]);
+          html+=`<thead><tr><th>Omschrijving</th><th>Waarde</th></tr></thead><tbody>`;
+          rows.forEach(([label,val])=>{
+            const isPrice=/^Prijs/i.test(label);
+            html+=`<tr><td class=\"${isPrice?'bold':''}\">${esc(label)}</td><td class=\"${isPrice?'bold':''}\">${typeof val==='string'?esc(val):val}</td></tr>`;
+          });
+          html+=`</tbody>`;
+          html+=`<tfoot><tr><td>Totaal per jaar</td><td>${euro((p.price||0)*(p.frequency||0))}</td></tr></tfoot>`;
+        }
+
+        html+=`</table>`;
+
+        el('priceContent').innerHTML=html;
+        el('priceBg').style.backgroundImage="url('https://www.acwbv.nl/wp-content/uploads/2025/08/Briefpapier-overige-pagina-1.jpg')";
+        document.getElementById('pricesheetSection').scrollIntoView({behavior:'smooth'});
+      });
+
+      // Werkprogramma upload
+      const wpChips=document.querySelectorAll('#workprogChoice .chip');
+      wpChips.forEach(ch=>ch.addEventListener('click',()=>{
+        wpChips.forEach(c=>c.classList.remove('active'));
+        ch.classList.add('active');
+        if(ch.getAttribute('data-choice')==='yes'){
+          el('workprogUpload').classList.remove('hidden');
+        }else{
+          el('workprogUpload').classList.add('hidden');
+          el('workprogPreview').innerHTML='';
+        }
+      }));
+      el('btnWorkprogPreview').addEventListener('click', async ()=>{
+        const file=el('workprogFile').files[0];
+        if(!file){ alert('Kies een bestand.'); return; }
+        if(file.type!=='application/pdf'){ alert('Upload een PDF-bestand.'); return; }
+        const buf=await file.arrayBuffer();
+        const pdf=await pdfjsLib.getDocument({data:buf}).promise;
+        const container=el('workprogPreview');
+        container.innerHTML='';
+        for(let n=1;n<=pdf.numPages;n++){
+          const page=await pdf.getPage(n);
+          const viewport=page.getViewport({scale:1.5});
+          const canvas=document.createElement('canvas');
+          const ctx=canvas.getContext('2d');
+          canvas.width=viewport.width;
+          canvas.height=viewport.height;
+          await page.render({canvasContext:ctx, viewport}).promise;
+          const img=document.createElement('img');
+          img.src=canvas.toDataURL('image/png');
+          img.style.width='100%';
+          img.style.display='block';
+          const pageDiv=document.createElement('div');
+          pageDiv.className='letter';
+          const bg=document.createElement('div');
+          bg.className='letter-bg';
+          bg.style.backgroundImage="url('https://www.acwbv.nl/wp-content/uploads/2025/08/Briefpapier-overige-pagina-1.jpg')";
+          const body=document.createElement('div');
+          body.className='letter-body workprog-body';
+          body.appendChild(img);
+          pageDiv.appendChild(bg);
+          pageDiv.appendChild(body);
+          container.appendChild(pageDiv);
+        }
+        if(container.firstElementChild){ container.firstElementChild.scrollIntoView({behavior:'smooth'}); }
+      });
+
+      // Ruimtestaat upload
+      const rsChips=document.querySelectorAll('#roomsheetChoice .chip');
+      rsChips.forEach(ch=>ch.addEventListener('click',()=>{
+        rsChips.forEach(c=>c.classList.remove('active'));
+        ch.classList.add('active');
+        if(ch.getAttribute('data-choice')==='yes'){
+          el('roomsheetUpload').classList.remove('hidden');
+        }else{
+          el('roomsheetUpload').classList.add('hidden');
+          el('roomsheetPreview').innerHTML='';
+        }
+      }));
+      el('btnRoomsPreview').addEventListener('click', async ()=>{
+        const file=el('roomsheetFile').files[0];
+        if(!file){ alert('Kies een bestand.'); return; }
+        if(file.type!=='application/pdf'){ alert('Upload een PDF-bestand.'); return; }
+        const buf=await file.arrayBuffer();
+        const pdf=await pdfjsLib.getDocument({data:buf}).promise;
+        const container=el('roomsheetPreview');
+        container.innerHTML='';
+        for(let n=1;n<=pdf.numPages;n++){
+          const page=await pdf.getPage(n);
+          const viewport=page.getViewport({scale:1.5});
+          const canvas=document.createElement('canvas');
+          const ctx=canvas.getContext('2d');
+          canvas.width=viewport.width;
+          canvas.height=viewport.height;
+          await page.render({canvasContext:ctx, viewport}).promise;
+          const img=document.createElement('img');
+          img.src=canvas.toDataURL('image/png');
+          img.style.width='100%';
+          img.style.display='block';
+          const pageDiv=document.createElement('div');
+          pageDiv.className='letter';
+          const bg=document.createElement('div');
+          bg.className='letter-bg';
+          bg.style.backgroundImage="url('https://www.acwbv.nl/wp-content/uploads/2025/08/Briefpapier-overige-pagina-1.jpg')";
+          const body=document.createElement('div');
+          body.className='letter-body roomsheet-body';
+          body.appendChild(img);
+          pageDiv.appendChild(bg);
+          pageDiv.appendChild(body);
+          container.appendChild(pageDiv);
+        }
+        if(container.firstElementChild){ container.firstElementChild.scrollIntoView({behavior:'smooth'}); }
+      });
+
+      // Toelichting vaste punten
+      const GENERAL_NOTES=[
+        'Genoemde bedragen en tarieven zijn exclusief het geldende BTW percentage en gebaseerd op een gehele gunning en de aangegeven handelingen en frequenties alsmede de bruto-uurlonen conform de CAO voor Schoonmaak- en Glazenwassersbedrijf 2025.',
+        'Op deze offerte zijn de algemene voorwaarden van onze brancheorganisatie (Schoonmakend Nederland) van toepassing. Deze kunt u vinden op onze website.',
+        'Alle rechten zijn voorbehouden. Niets van de in deze offerte gepubliceerde gegevens mag worden verveelvoudigd, opgeslagen in een geautomatiseerd gegevensbestand en/of openbaar worden gemaakt, in enige vorm of op enige wijze, hetzij elektronisch, mechanisch, door fotokopieën, opnamen of enige andere manier, zonder uitdrukkelijke voorafgaande schriftelijke toestemming van ACW. Ook het gebruik van merk- en productnamen van ACW in op zoekmachines gerichte teksten is niet toegestaan. ACW hanteert een actief en strikt beleid in de controle van ongevraagde verveelvoudiging of misbruik van materialen en teksten van haar website en zal bij overtreding altijd juridische stappen nemen.',
+        'De betaling van de facturen met een beurtprijs geschiedt achteraf en dient binnen dertig dagen na factuurdatum te zijn voldaan.',
+        'De betaling van de facturen met een periodeprijs (per 4 weken) of een maandprijs geschiedt vooraf en dient binnen dertig dagen na factuurdatum te zijn voldaan.',
+        'De offerte is geldig tot 60 dagen na dagtekening.',
+        'Levering geschiedt volgens de algemene voorwaarden van Schoonmakend Nederland.',
+        'Het karakter van dit voorstel is vrijblijvend.'
+      ];
+
+      // Bijzonderheden UI
+      function renderNotesList(){
+        const list=el('notesList');
+        if(!DRAFT.notes.length){ list.innerHTML='<div class="muted">(Nog geen bijzonderheden toegevoegd)</div>'; return; }
+        list.innerHTML='';
+        DRAFT.notes.forEach((t,idx)=>{
+          const row=document.createElement('div'); row.className='item';
+          row.innerHTML=`<span class='bullet'></span> <div style='flex:1'>${esc(t)}</div> <button class='remove' title='Verwijderen'>&times;</button>`;
+          row.querySelector('.remove').addEventListener('click',()=>{ DRAFT.notes.splice(idx,1); renderNotesList(); });
+          list.appendChild(row);
+        });
+      }
+      el('addNote').addEventListener('click',()=>{ const v=(el('noteInput').value||'').trim(); if(!v) return; DRAFT.notes.push(v); el('noteInput').value=''; renderNotesList(); });
+
+      // Toelichting preview + ondertekenen
+      function buildNotesPreview(){
+        const m=DRAFT.meta;
+        let html='';
+        html+=`<h1 class=\"raj-title\" style=\"font-size:16pt; margin:0 0 10px\">Aandachtspunten/toelichting</h1>`;
+        html+=`<h2 class=\"raj-title\" style=\"font-size:13pt; margin:10px 0 6px\">Algemeen</h2>`;
+        html+=`<ul class=\"acw-ul\">${GENERAL_NOTES.map(n=>`<li>${esc(n)}</li>`).join('')}</ul>`;
+        if(DRAFT.notes.length){
+          html+=`<h2 class=\"raj-title\" style=\"font-size:13pt; margin:16px 0 6px\">Bijzonderheden</h2>`;
+          html+=`<ul class=\"acw-ul\">${DRAFT.notes.map(n=>`<li>${esc(n)}</li>`).join('')}</ul>`;
+        }
+        const sigs={ rd:'https://www.acwbv.nl/wp-content/uploads/2025/08/handtekening-roger.png', jvp:'https://www.acwbv.nl/wp-content/uploads/2025/08/handtekening-jaimy.png', dvp:'https://www.acwbv.nl/wp-content/uploads/2025/08/handtekening-daniel.png' };
+        const sig=sigs[m.makerAbbr]||'';
+        html+=`<div class="sign-title">Voor akkoord:</div>`;
+        html+=`<div class="sign-grid signature-row">`;
+        html+=`  <div class="sign-left signature-col">`+
+        `${sig?`<img src="${sig}" alt="Handtekening">`:''}`+
+        `<div class="sign-text">ACW<br>${esc(m.makerName||'')}</div>`+
+      `</div>`;
+        html+=`  <div class="sign-right signature-col">`+
+        `<div class="sign-line signature-line"></div>`+
+        `<div class="sign-text">${esc(m.companyName||'')}<br>${esc(m.contactFull||'')}</div>`+
+      `</div>`;
+        html+=`</div>`;
+
+        el('notesContent').innerHTML=html;
+        el('notesBg').style.backgroundImage = "url('https://www.acwbv.nl/wp-content/uploads/2025/08/Briefpapier-overige-pagina-1.jpg')";
+        document.getElementById('notesPreviewSection').scrollIntoView({behavior:'smooth'});
+      }
+      el('btnUpdateNotesPreview').addEventListener('click',buildNotesPreview);
+
+      // === VOORBLAD ===
+      el('coverImageChoice').addEventListener('change',()=>{
+        if(el('coverImageChoice').value==='custom') el('coverImageUpload').classList.remove('hidden');
+        else { el('coverImageUpload').classList.add('hidden'); el('coverImageUpload').value=''; }
+      });
+
+      function resolveStandardCover(kind){
+        if(kind==='regular_office'||kind==='regular_hoa') return 'https://www.acwbv.nl/wp-content/uploads/2025/09/Foto-schoonmaak-v3-scaled.jpg';
+        if(kind==='specialist') return 'https://www.acwbv.nl/wp-content/uploads/2025/08/Foto-specialistische-reiniging.jpg';
+        if(kind==='glass') return 'https://www.acwbv.nl/wp-content/uploads/2025/08/Foto-glasbewassing.jpg';
+        return '';
+      }
+
+      function updateCoverPreview(){
+        const m=DRAFT.meta;
+        const summary=(el('coverSummary').value||'').trim();
+        let left='<p class=\"label\">Voorstel t.b.v.:</p>';
+        if(DRAFT.kind==='regular_hoa'){
+          if(m.hoaMgmt==='external'){
+            left+=`<p>${esc(m.companyName||'')}</p>`+
+                   `<p>${esc(m.managerName||'')}</p>`+
+                   `<p>${esc(m.contactFull||'')}</p>`;
+          } else {
+            left+=`<p>${esc(m.companyName||'')}</p>`+
+                   `<p>${esc(m.contactFull||'')}</p>`+
+                   `<p>${esc(m.street||'')}</p>`+
+                   `<p>${esc(m.postalCity||'')}</p>`;
+          }
+        } else {
+          left+=`<p>${esc(m.companyName||'')}</p>`+
+                 `<p>${esc(m.street||'')}</p>`+
+                 `<p>${esc(m.postalCity||'')}</p>`;
+        }
+        const right=`<p class=\"label\">Voorstel m.b.t.:</p>`+
+          `<p>${esc(summary)}</p>`;
+        el('coverLeft').innerHTML=left;
+        el('coverRight').innerHTML=right;
+
+        const choice=el('coverImageChoice').value;
+        if(choice==='custom'){
+          const file=el('coverImageUpload').files?.[0];
+          if(file){
+            const reader=new FileReader();
+            reader.onload=e=>{ el('coverBg').style.backgroundImage=`url('${e.target.result}')`; };
+            reader.readAsDataURL(file);
+          } else {
+            const url=resolveStandardCover(DRAFT.kind); el('coverBg').style.backgroundImage=url?`url('${url}')`:'';
+          }
+        } else {
+          const url=resolveStandardCover(DRAFT.kind); el('coverBg').style.backgroundImage=url?`url('${url}')`:'';
+        }
+      }
+
+      el('btnUpdateCoverPreview').addEventListener('click',()=>{ updateCoverPreview(); document.getElementById('coverPreviewSection').scrollIntoView({behavior:'smooth'}); });
+
+      // ===== EXPORT HELPERS =====
+      const assetCache={};
+      async function toDataUrl(url){
+        if(assetCache[url]) return assetCache[url];
+        const res=await fetch(url);
+        const blob=await res.blob();
+        const data=await new Promise(r=>{const fr=new FileReader(); fr.onload=()=>r(fr.result); fr.readAsDataURL(blob);});
+        assetCache[url]=data; return data;
+      }
+      async function inlineAssets(node){
+        for(const cls of ['.letter-bg','.cover-photo','.cover-overlay']){
+          for(const el of node.querySelectorAll(cls)){
+            const url=getBgUrl(el); if(!url) continue;
+            try{ el.style.backgroundImage=`url('${await toDataUrl(url)}')`; }catch(e){/* ignore */}
+          }
+        }
+        for(const img of node.querySelectorAll('img')){
+          const src=img.getAttribute('src');
+          if(src && !src.startsWith('data:')){
+            try{ img.src=await toDataUrl(src); }catch(e){/* ignore */}
+          }
+        }
+      }
+      async function clonePage(elm){
+        const node=elm.cloneNode(true);
+        node.querySelectorAll('.letter-bg').forEach(bg=>{
+          const cs=getComputedStyle(bg);
+          bg.style.backgroundImage=cs.backgroundImage;
+          bg.style.backgroundSize=cs.backgroundSize;
+          bg.style.backgroundPosition=cs.backgroundPosition;
+        });
+        await inlineAssets(node);
+        node.classList.add('page-break');
+        return node;
+      }
+      async function buildExportStack(){
+        const stack=document.getElementById('exportStack');
+        stack.innerHTML='';
+        const order=['coverPreviewSection','letterSection','pricesheetSection','workprogramSection','roomsheetSection','notesPreviewSection'];
+        for(const id of order){
+          const sec=document.getElementById(id); if(!sec) continue;
+          const pages=sec.querySelectorAll('.letter');
+          for(const page of pages){ stack.appendChild(await clonePage(page)); }
+        }
+        return stack;
+      }
+
+      function collectPages(){
+        const order=['coverPreviewSection','letterSection','pricesheetSection','workprogramSection','roomsheetSection','notesPreviewSection'];
+        const pages=[];
+        order.forEach(id=>{
+          const sec=document.getElementById(id); if(!sec) return;
+          const letters=sec.querySelectorAll('.letter'); if(!letters.length) return;
+          letters.forEach(page=>{
+            if(id==='coverPreviewSection'){
+              pages.push({
+                type:'cover',
+                photoUrl:getBgUrl(page.querySelector('.cover-photo')),
+                overlayUrl:getBgUrl(page.querySelector('.cover-overlay')),
+                bodyHTML: page.querySelector('.cover-body')?.innerHTML||''
+              });
+            } else {
+              const bodyEl = page.querySelector('.letter-body');
+              const bodyHTML = bodyEl?.innerHTML || page.innerHTML;
+              pages.push({
+                type:'letter',
+                bgUrl:getBgUrl(page.querySelector('.letter-bg')),
+                bodyHTML,
+                noPadding: bodyEl?.classList.contains('workprog-body') || bodyEl?.classList.contains('roomsheet-body')
+              });
+            }
+          });
+        });
+        return pages;
+      }
+
+      async function printFallback(){
+        const toast=el('exportToast');
+        toast.classList.remove('hidden'); toast.textContent='PDF (print) wordt voorbereid…';
+        const pages=collectPages();
+        const bp='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iMzAiIHZpZXdCb3g9IjAgMCA0MCAzMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiBhcmlhLWhpZGRlbj0idHJ1ZSI+PHBvbHlnb24gcG9pbnRzPSIwLDggNDAsMCA0MCwzMCAwLDMwIiBmaWxsPSIjZTMwNjEzIi8+PC9zdmc+';
+        const iframe=document.createElement('iframe');
+        iframe.style.position='fixed'; iframe.style.right='0'; iframe.style.bottom='0'; iframe.style.width='0'; iframe.style.height='0'; iframe.style.border='0';
+        document.body.appendChild(iframe);
+        const doc=iframe.contentDocument || iframe.contentWindow.document;
+        doc.open();
+        const ref = (DRAFT.meta.ourRef || 'ACW-offerte').replace(/[^\w\d-]+/g,'_');
+        const prevTitle=document.title;
+        doc.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>${ref}</title>
+          <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
+          <style>
+            @page { size: A4 portrait; margin: 0; }
+            html,body{ margin:0; padding:0; background:#fff }
+            @media print{
+            *{ -webkit-print-color-adjust: exact; print-color-adjust: exact }
+            }
+            .page{ width:210mm; height:297mm; position:relative; page-break-after:always; overflow:hidden; font-family:'Inter',sans-serif; }
+            .bg-img{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover }
+            .body{ position:relative; padding:28mm 22mm 24mm 22mm; font-size:10pt; line-height:1.5 }
+            .cover-body{ position:relative; font-family:'Rajdhani', sans-serif; font-weight:500; color:#fff; }
+            .cover-text{ position:absolute; top:205mm; left:28mm; width:90mm; display:flex; justify-content:space-between; gap:1px; }
+            .cover-col{ width:48% }
+            .cover-col p{ margin:3px 0 }
+            .cover-col .label{ font-weight:700 }
+            .raj-title{ font-family:'Rajdhani', sans-serif; font-weight:700 }
+            table.pricetable{ width:100%; border-collapse:separate; border-spacing:0; font-size:10pt; font-family:'Rajdhani', sans-serif }
+            table.pricetable th, table.pricetable td{ padding:8px 10px; border-bottom:1px solid #e5e7eb; text-align:left }
+            table.pricetable th{ background:#D52B1E; color:#fff; font-weight:700 }
+            table.pricetable td.bold{ font-weight:700 }
+            .acw-ul{ list-style:none; padding-left:0; margin:8px 0 0 }
+            .acw-ul li{ position:relative; padding-left:20px; margin:6px 0; font-size:10pt; }
+            .acw-ul li::before{ content:''; position:absolute; left:0; top:0.95em; transform:translateY(-50%); width:12px; height:9px; background:url('${bp}') no-repeat center/contain; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+            .sign-title{ margin-top:24px; margin-bottom:10px; font-size:10pt }
+            .sign-left img{ height:100px; display:block; margin-bottom:8px }
+            .sign-right{ margin-top:108px }
+            .sign-line{ border-top:2px solid #000; width:220px; margin-bottom:8px }
+            .sign-text{ font-size:10pt; line-height:1.3 }
+          /* === PRINT STABILITY RULES (voorblad + ondertekenen) === */
+@media print{
+/* 1) Cover: twee tekstvakken als stabiele inline‑blocks met vaste kolombreedtes */
+[data-print-lock]{
+display:inline-block; /* stabieler dan flex/grid in print */
+vertical-align:top;
+width:48%;
+box-sizing:border-box;
+page-break-inside: avoid;
+}
+[data-print-lock="left"]{ margin-right:4%; }
+[data-print-lock] *{ line-height:1.25; } /* vaste line-height voorkomt reflow per pagina */
+
+
+/* 2) Ondertekenen: vaste kolommen, geen wrap/glitches */
+.signature-row{ display:flex; page-break-inside: avoid; align-items:flex-start; }
+.signature-col{ flex:0 0 48%; box-sizing:border-box; }
+.signature-col + .signature-col{ margin-left:4%; }
+
+
+.signature-line{ height:0; border-top:2px solid #000; margin:12px 0 8px; }
+.keep-inline{ display:inline-block; vertical-align:middle; }
+
+
+/* 3) Breek‑beheersing zodat blokken niet door midden scheuren */
+.page h2, .page h3, .page p, .signature-row, [data-print-lock]{
+orphans:3; widows:3; /* nettere tekst */
+break-inside: avoid; /* moderne syntax */
+page-break-inside: avoid; /* legacy */
+}
+
+
+/* 4) Font & metrieken consistent houden in print */
+body{ -webkit-text-size-adjust:100%; text-size-adjust:100%; }
+}          
+          </style></head><body>`);
+        pages.forEach(p=>{
+          doc.write('<div class="page">');
+          if(p.bgUrl) doc.write(`<img class="bg-img" src="${p.bgUrl}">`);
+          if(p.photoUrl) doc.write(`<img class="bg-img" src="${p.photoUrl}">`);
+          if(p.overlayUrl) doc.write(`<img class="bg-img" src="${p.overlayUrl}">`);
+          const bodyCls = p.type==='cover'?'cover-body':'body';
+          const pad = p.noPadding ? ' style="padding:0"' : '';
+          doc.write(`<div class="${bodyCls}"${pad}>${p.bodyHTML}</div>`);
+          doc.write('</div>');
+        });
+        doc.write('</body></html>');
+        doc.close();
+        // wacht tot alle afbeeldingen geladen zijn
+        const imgs=doc.images; const waitImgs=Array.from(imgs).map(img=> new Promise(res=>{ if(img.complete) return res(); img.onload=img.onerror=()=>res(); }));
+        await Promise.all(waitImgs);
+        iframe.contentWindow.focus();
+        iframe.contentDocument.title = ref;
+        document.title = ref;
+        iframe.contentWindow.print();
+        setTimeout(()=>{
+          document.title = prevTitle;
+          document.body.removeChild(iframe);
+          toast.textContent='Printdialoog geopend. Kies "Opslaan als PDF".';
+          setTimeout(()=>toast.classList.add('hidden'), 4000);
+        }, 500);
+      }
+
+// ===== EXPORT (PDF) – raster via html2canvas =====
+async function exportPdfRaster(){
+  await ensureRasterLibs();
+  const stack = await buildExportStack();
+  const pdf = new jspdf.jsPDF({orientation:'p', unit:'mm', format:'a4'});
+  const w = pdf.internal.pageSize.getWidth();
+  const h = pdf.internal.pageSize.getHeight();
+  const pages = Array.from(stack.children);
+  for(let i=0; i<pages.length; i++){
+    const canvas = await html2canvas(pages[i], {scale:2, useCORS:true, backgroundColor:'#fff'});
+    const img = canvas.toDataURL('image/jpeg', 0.95);
+    if(i>0) pdf.addPage();
+    pdf.addImage(img, 'JPEG', 0, 0, w, h);
+  }
+  const ref = (DRAFT.meta.ourRef || 'offerte').replace(/[^\w\d-]+/g,'_');
+  pdf.save(`${ref}.pdf`);
+  stack.innerHTML = '';
+}
+
+document.getElementById('btnExportPdf').addEventListener('click', async function(){
+  const toast = el('exportToast');
+  toast.classList.remove('hidden');
+  toast.textContent = 'PDF wordt gegenereerd…';
+  try{
+    await exportPdfRaster();
+    toast.textContent = 'PDF download gestart';
+  }catch(err){
+    console.error(err);
+    await printFallback();
+    return;
+  }
+  setTimeout(()=>toast.classList.add('hidden'), 4000);
+});
+document.getElementById('btnPrintPdf').addEventListener('click', async function(){
+  await printFallback();
+});
+
+      async function ensureRasterLibs(){
+// Wacht totdat window.html2canvas en window.jspdf geladen zijn
+const wait = (cond)=> new Promise(r=>{
+const t=setInterval(()=>{ if(cond()){ clearInterval(t); r(); } }, 50);
+});
+if(!window.html2canvas){ await wait(()=>window.html2canvas); }
+if(!(window.jspdf && window.jspdf.jsPDF)){ await wait(()=>window.jspdf && window.jspdf.jsPDF); }
+return true;
+}
+      // ===== Zelftest =====
+      el('btnSelfTest').addEventListener('click', async ()=>{
+        const out=el('selfTestOut');
+        function ok(b){return b? '✅' : '❌'}
+        const pages=['coverPreviewSection','letterSection','pricesheetSection','workprogramSection','roomsheetSection','notesPreviewSection'].map(id=>({id, has: !!document.getElementById(id)?.querySelector('.letter')}));
+        const h2p = !!window.html2pdf || await ensureHtml2Pdf();
+        out.innerHTML = [
+          `html2pdf beschikbaar: ${ok(h2p)}`,
+          ...pages.map(p=>`Sectie ${p.id}: ${ok(p.has)}`)
+        ].join('<br>');
+      });
+
+      function applyDraft(){
+        if(DRAFT.kind){
+          el('typeSection').classList.add('hidden');
+          el('formPage').classList.remove('hidden');
+          el('pricingType').textContent=labels[DRAFT.kind]||'-';
+          renderPricingFields();
+        }
+        const m=DRAFT.meta||{};
+        el('makerName').value=m.makerName||'';
+        el('makerAbbr').value=m.makerAbbr||'';
+        el('nocoreNumber').value=m.nocoreNumber||'';
+        el('companyName').value=m.companyName||'';
+        el('managerName').value=m.managerName||'';
+        el('contactFull').value=m.contactFull||'';
+        el('contactFirst').value=m.contactFirst||'';
+        el('street').value=m.street||'';
+        el('postalCity').value=m.postalCity||'';
+        el('letterDate').value=m.letterDate||'';
+        el('hoaMgmt').value=m.hoaMgmt||'';
+        el('ourRef').value=m.ourRef||'';
+        el('letterSubject').value=m.letterSubject||'';
+        el('letterBody').value=m.letterBody||'';
+        renderNawForm();
+      }
+
+      applyDraft();
+      saveDraft();
+    });
+  </script>
+</body>
+</html>
+ 
