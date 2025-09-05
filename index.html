@@ -57,7 +57,16 @@
         div.className='card';
         const info=document.createElement('div');
         info.className='info';
-        const yearly = d.pricing && d.pricing.yearly ? d.pricing.yearly : 0;
+        let yearly = 0;
+        if(d.pricing){
+          if(typeof d.pricing.yearly==='number' && d.pricing.yearly>0){
+            yearly = d.pricing.yearly;
+          }else if(Array.isArray(d.pricing.posts)){
+            yearly = d.pricing.posts.reduce((sum,p)=> sum + (p.yearly||0) + (p.sp_yearly||0),0);
+          }else if(d.pricing.price && d.pricing.frequency){
+            yearly = (d.pricing.price||0)*(d.pricing.frequency||0);
+          }
+        }
         info.innerHTML=`<strong>${d.meta?.companyName||'Onbekend'}</strong><br>Type: ${d.kind||'-'}<br>Onze referentie: ${d.meta?.ourRef||'-'}<br>Prijs per jaar: € ${(yearly).toLocaleString('nl-NL',{minimumFractionDigits:2, maximumFractionDigits:2})}`;
         div.appendChild(info);
         const edit=document.createElement('button');
