@@ -3,18 +3,40 @@
 <head>
   <meta charset="UTF-8">
   <title>Offertes</title>
+  <!-- Inter overal; Rajdhani voor prijzen/headers -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
   <style>
-    body{font-family:Arial, sans-serif; margin:20px;}
-    #list{margin-top:20px;}
-    .card{border:1px solid #ccc; border-radius:4px; padding:10px; margin-bottom:10px; display:flex; justify-content:space-between; align-items:center;}
-    .info{flex:1;}
-    button{margin-left:8px;}
+    :root{ --acw-red:#D52B1E; --acw-black:#222222 }
+    *{ box-sizing:border-box }
+    body{ margin:0; font-family: 'Inter', system-ui, sans-serif; background:#f7f7f8; color:#111 }
+    header{ background:#222; color:#fff; border-bottom:4px solid var(--acw-red) }
+    .head{ display:flex; gap:12px; align-items:center; padding:12px 16px }
+    .head img{ height:36px }
+    .head h1{ margin:0; font-size:18px; font-weight:800 }
+    .container{ max-width:1060px; margin:18px auto; padding:0 14px }
+    .card{ background:#fff; border:1px solid #e5e7eb; border-radius:14px; box-shadow:0 2px 12px rgba(0,0,0,.05); padding:18px; margin-bottom:14px; display:flex; justify-content:space-between; align-items:center }
+    .title{ font-size:18px; font-weight:800; margin:0 }
+    .info{ flex:1 }
+    .btn{ display:inline-flex; align-items:center; gap:8px; padding:10px 14px; border:none; cursor:pointer; font-weight:800; background:var(--acw-red); color:#fff; border-radius:12px }
+    .btn:disabled{ opacity:0.5; cursor:not-allowed }
+    button{ margin-left:8px }
+    #newQuote{ margin-left:0 }
   </style>
 </head>
 <body>
-  <h1>Offertes</h1>
-  <button id="newQuote">Nieuwe offerte maken</button>
-  <div id="list"></div>
+  <header>
+    <div class="head">
+      <img src="https://www.acwbv.nl/wp-content/uploads/2025/08/LOGO-ACW-RGB-SLOGAN-DIAP-OP-ZWART.png" alt="ACW logo">
+      <h1>Offerteplatform</h1>
+    </div>
+  </header>
+  <main class="container">
+    <section class="card">
+      <h2 class="title">Offertes</h2>
+      <button id="newQuote" class="btn">Nieuwe offerte maken</button>
+    </section>
+    <div id="list"></div>
+  </main>
   <script>
     const listEl=document.getElementById('list');
     document.getElementById('newQuote').addEventListener('click',()=>{
@@ -39,9 +61,12 @@
         info.innerHTML=`<strong>${d.meta?.companyName||'Onbekend'}</strong><br>Type: ${d.kind||'-'}<br>Onze referentie: ${d.meta?.ourRef||'-'}<br>Prijs per jaar: € ${(yearly).toLocaleString('nl-NL',{minimumFractionDigits:2, maximumFractionDigits:2})}`;
         div.appendChild(info);
         const edit=document.createElement('button');
+        edit.className='btn';
         edit.textContent='Doorgaan/wijzigen';
         edit.addEventListener('click',()=>{ window.location.href='builder.html?id='+d.id; });
         const del=document.createElement('button');
+        del.className='btn';
+        del.style.background='var(--acw-black)';
         del.textContent='Verwijderen';
         del.addEventListener('click',()=>{
           if(confirm('Weet je zeker dat je deze offerte wil verwijderen? Deze actie kan niet ongedaan worden gemaakt.')){
